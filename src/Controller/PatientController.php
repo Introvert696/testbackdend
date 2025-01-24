@@ -14,17 +14,19 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/api')]
 final class PatientController extends AbstractController
 {
+    public function __construct(
+        private readonly PatientsServices $patientsServices
+    ){}
     #[Route('/patient',name:'index_patient',methods: ['GET'])]
-    public function index(EntityManagerInterface $em): JsonResponse
+    public function index(): JsonResponse
     {
-        $patientsRepository = $em->getRepository(Patients::class);
-        $patients = $patientsRepository->findAll();
-        return $this->json($patients);
+        $response = $this->patientsServices->all();
+        return $this->json($response);
     }
     #[Route('/patient',name:'store_patient',methods: ['POST'])]
-    public function store(Request $request,PatientsServices $patientsServices): JsonResponse
+    public function store(Request $request): JsonResponse
     {
-        $result = $patientsServices->createOrFind($request->getContent());
+        $result = $this->patientsServices->createOrFind($request->getContent());
         return $this->json($result);
     }
     #[Route('/patient/{id}', name: 'show_patient', defaults: ['id'=>null], methods: ['GET'])]
@@ -36,17 +38,14 @@ final class PatientController extends AbstractController
     }
 
     #[Route('/patient/{id}', name: 'update_patient', defaults: ['id'=>null], methods: ['PUT'])]
-    public function update(Request $request,EntityManagerInterface $em,int|null $id): JsonResponse
+    public function update(Request $request,int|null $id): JsonResponse
     {
-        dd('update');
-        $patientsRepository = $em->getRepository(Patients::class);
-        $patient = $patientsRepository->get($id);
-        return $this->json($patient);
+        $result = $this->patientsServices->update($id,$request->getContent());
+        return $this->json($result);
     }
     #[Route('/patient/{id}', name: 'delete_patient', defaults: ['id'=>null], methods: ['DELETE'])]
     public function delete(EntityManagerInterface $em,int|null $id): JsonResponse
     {
-        dd('delete');
         $patientsRepository = $em->getRepository(Patients::class);
         $patient = $patientsRepository->get($id);
         return $this->json($patient);

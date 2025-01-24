@@ -15,29 +15,22 @@ class ChambersRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Chambers::class);
     }
+    public function findByNumber($number):Chambers|null
+    {
 
-    //    /**
-    //     * @return Chambers[] Returns an array of Chambers objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('c')
-    //            ->andWhere('c.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('c.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+        $result = $this->createQueryBuilder('c')
+            ->andWhere('c.number = :number')
+            ->setParameter('number' ,$number)
+            ->getQuery()
+            ->getResult();
 
-    //    public function findOneBySomeField($value): ?Chambers
-    //    {
-    //        return $this->createQueryBuilder('c')
-    //            ->andWhere('c.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        if(!$result){
+            return null;
+        }
+        else{
+            return $result[0];
+        }
+
+    }
+
 }
