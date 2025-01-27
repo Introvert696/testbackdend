@@ -2,10 +2,11 @@
 
 namespace App\Services;
 
-use App\Entity\Chambers;
-use App\Entity\ChambersPatients;
+use App\DTO\ChamberDTO;
 use App\Repository\ChambersRepository;
+use App\Repository\ProcedureListRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Serializer\SerializerInterface;
 
 class ChambersService
 {
@@ -13,6 +14,8 @@ class ChambersService
         private readonly EntityManagerInterface $em,
         private readonly JsonResponseHelper $jsonResponseHelpers,
         private readonly ChambersRepository $chambersRepository,
+        private readonly SerializerInterface $serializer,
+        private readonly ProcedureListRepository $procedureListRepository,
     )
     {}
     public function get($id): array
@@ -42,5 +45,17 @@ class ChambersService
         $result =$query->getResult();
 
         return $this->jsonResponseHelpers->generate('Ok',200,'Procedures, chamber - '.$id ,$result);
+    }
+    public function addProcedure($id,$data): array
+    {
+        $data = $this->serializer->deserialize($data,ChamberDTO::class.'[]','json');
+        // check it in table, if exist update data
+        //
+        foreach ($data as $d){
+            dump($this->procedureListRepository->findByProcedureQueuePatient($d->getProcedureId(),$d->getQueue(),$d->getPatientId()));
+        }
+
+        dd();
+        return [];
     }
 }
