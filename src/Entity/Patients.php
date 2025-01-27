@@ -6,6 +6,7 @@ use App\Repository\PatientsRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Ignore;
 
 #[ORM\Entity(repositoryClass: PatientsRepository::class)]
 class Patients
@@ -21,12 +22,14 @@ class Patients
     #[ORM\Column(unique: true)]
     private ?int $card_number = null;
 
+    #[Ignore]
     #[ORM\OneToOne(mappedBy: 'patients', cascade: ['persist', 'remove'])]
     private ?ChambersPatients $chambersPatients = null;
 
     /**
      * @var Collection<int, ProcedureList>
      */
+    #[Ignore]
     #[ORM\OneToMany(targetEntity: ProcedureList::class, mappedBy: 'patients',fetch: 'LAZY')]
     private Collection $procedureLists;
 

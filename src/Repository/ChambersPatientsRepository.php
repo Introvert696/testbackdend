@@ -13,7 +13,7 @@ class ChambersPatientsRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
-        dd($this);
+
         parent::__construct($registry, ChambersPatients::class);
     }
 

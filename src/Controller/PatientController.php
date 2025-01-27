@@ -17,19 +17,19 @@ final class PatientController extends AbstractController
     public function __construct(
         private readonly PatientsServices $patientsServices
     ){}
-    #[Route('/patient',name:'index_patient',methods: ['GET'])]
+    #[Route('/patients',name:'index_patients',methods: ['GET'])]
     public function index(): JsonResponse
     {
         $response = $this->patientsServices->all();
-        return $this->json($response);
+        return $this->json($response,$response['code']);
     }
-    #[Route('/patient',name:'store_patient',methods: ['POST'])]
+    #[Route('/patients',name:'store_patients',methods: ['POST'])]
     public function store(Request $request): JsonResponse
     {
         $result = $this->patientsServices->createOrFind($request->getContent());
-        return $this->json($result);
+        return $this->json($result,202);
     }
-    #[Route('/patient/{id}', name: 'show_patient', defaults: ['id'=>null], methods: ['GET'])]
+    #[Route('/patients/{id}', name: 'show_patients', defaults: ['id'=>null], methods: ['GET'])]
     public function get(EntityManagerInterface $em,int|null $id): JsonResponse
     {
         $patientsRepository = $em->getRepository(Patients::class);
@@ -37,18 +37,17 @@ final class PatientController extends AbstractController
         return $this->json($patient);
     }
 
-    #[Route('/patient/{id}', name: 'update_patient', defaults: ['id'=>null], methods: ['PUT'])]
+    #[Route('/patients/{id}', name: 'update_patients', defaults: ['id'=>null], methods: ['PUT'])]
     public function update(Request $request,int|null $id): JsonResponse
     {
-        $result = $this->patientsServices->update($id,$request->getContent());
-        return $this->json($result);
+        $response = $this->patientsServices->update($id,$request->getContent());
+        return $this->json($response,$response['code']);
     }
-    #[Route('/patient/{id}', name: 'delete_patient', defaults: ['id'=>null], methods: ['DELETE'])]
+    #[Route('/patients/{id}', name: 'delete_patients', defaults: ['id'=>null], methods: ['DELETE'])]
     public function delete(EntityManagerInterface $em,int|null $id): JsonResponse
     {
-        $patientsRepository = $em->getRepository(Patients::class);
-        $patient = $patientsRepository->get($id);
-        return $this->json($patient);
+        $response = $this->patientsServices->remove($id);
+        return $this->json($response,$response['code']);
     }
 
 }

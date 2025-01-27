@@ -86,4 +86,20 @@ class PatientsServices
 
         return $this->responseHelper->generate('Ok',200,$respData['message'],Array($patient));
     }
+    public function remove($id): array
+    {
+        $patient = $this->patientsRepository->get($id);
+        if(!$patient){
+            $response = $this->responseHelper->generate('Not Found',404,"Patient not found");
+        }
+        else{
+            foreach ($patient as $p){
+                $this->em->remove($p);
+            }
+            $this->em->flush();
+            $response = $this->responseHelper->generate('Ok',200,"Patient has been removed");
+        }
+
+        return $response;
+    }
 }
