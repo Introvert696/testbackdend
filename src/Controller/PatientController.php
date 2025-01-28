@@ -32,9 +32,9 @@ final class PatientController extends AbstractController
     #[Route('/patients/{id}', name: 'show_patients', defaults: ['id'=>null], methods: ['GET'])]
     public function get(EntityManagerInterface $em,int|null $id): JsonResponse
     {
-        $patientsRepository = $em->getRepository(Patients::class);
-        $patient = $patientsRepository->get($id);
-        return $this->json($patient);
+        $response  = $this->patientsServices->about($id);
+        // card_number and cardNumber - fix it
+        return $this->json($response);
     }
 
     #[Route('/patients/{id}', name: 'update_patients', defaults: ['id'=>null], methods: ['PUT'])]

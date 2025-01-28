@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Entity\ChambersPatients;
 use App\Entity\Patients;
+use App\Entity\ProcedureList;
 use App\Repository\ChambersRepository;
 use App\Repository\PatientsRepository;
+use App\Repository\ProcedureListRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -17,6 +19,7 @@ class PatientsServices
         private readonly JsonResponseHelper $responseHelper,
         private readonly PatientsRepository $patientsRepository,
         private readonly ChambersRepository $chambersRepository,
+        private readonly ProcedureListRepository $procedureListRepository,
     )
     {
     }
@@ -31,7 +34,7 @@ class PatientsServices
         // для этих целей лучше использовать DTO
         // в понедельник попробывать сделать все через DTO
         $patient = $this->serializer->deserialize(data: $data,type: Patients::class,format:'json');
-        $result = $this->patientsRepository->findByCardNumber($patient->getCardNumber());
+        $result = $this->patientsRepository->findBy(['card_number'=>$patient->getCardNumber()]);
 
         if(!$result){
             $this->em->persist($patient);
@@ -46,7 +49,6 @@ class PatientsServices
     }
     public function update($id,$data): array{
         $respData['message']="Update,";
-        $respData['status']=200;
 
         $updatedData = $this->serializer->deserialize(data: $data,type: Patients::class,format:'json');
         $patient = $this->patientsRepository->find($id);
@@ -80,7 +82,6 @@ class PatientsServices
 
                 $this->em->flush();
             }
-//            $respData['message'] .= ' Patient has been updated';
 
         }
 
@@ -100,6 +101,15 @@ class PatientsServices
             $response = $this->responseHelper->generate('Ok',200,"Patient has been removed");
         }
 
+        return $response;
+    }
+    public function about(int $id): array
+    {
+        $patient = $this->patientsRepository->find($id);
+        $procList = $this->procedureListRepository->findBy(['source_type'=>'patients','source_id'=>$id]);
+        $data['patient'] = $patient;
+        $data['procedure_list'] = $procList;
+        $response = $this->responseHelper->generate('Ok',200,"Patient info",$data);
         return $response;
     }
 }

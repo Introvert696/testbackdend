@@ -4,9 +4,9 @@ namespace App\Services;
 
 use App\DTO\ProcListDTO;
 use App\Entity\ProcedureList;
-use App\Entity\Procedures;
 use App\Repository\ChambersRepository;
 use App\Repository\ProcedureListRepository;
+use App\Repository\ProceduresRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -18,6 +18,8 @@ class ChambersService
         private readonly ChambersRepository $chambersRepository,
         private readonly SerializerInterface $serializer,
         private readonly ProcedureListRepository $procedureListRepository,
+        private readonly ProceduresRepository $proceduresRepository
+
     )
     {}
     public function get($id): array
@@ -34,57 +36,51 @@ class ChambersService
 
         return $this->jsonResponseHelpers->generate('Ok',200,'Chamber and he patients',$data);
     }
-    public function getProcedure($id): array
+    public function getProcedure(int $id): array
     {
-        $query = $this->em->createQuery(
-            'SELECT pr.id,pr.title from App\Entity\ProcedureList pl
-                  JOIN pl.procedures pr
-                  JOIN pl.patients p
-                  JOIN p.chambersPatients cp
-                  join cp.chambers c
-                  where c.id = 1'
-        );
-        $result =$query->getResult();
+        $procList = $this->procedureListRepository->findBy(['source_type'=>'chambers','source_id'=>$id]);
+        $procedures = [];
+        foreach ($procList as $pl){
+            $procedures[]=$pl;
+        }
+        $response = $this->jsonResponseHelpers->generate('Ok',200,'Procedures, chamber - '.$id ,$procedures);
+        if(!$procedures){
+            $response = $this->jsonResponseHelpers->generate('Not Found',404,'Procedures not found' );
+        }
 
-        return $this->jsonResponseHelpers->generate('Ok',200,'Procedures, chamber - '.$id ,$result);
+        return $response;
     }
     public function addProcedure($id,$data): array
     {
-        $data = $this->serializer->deserialize($data,ProcListDTO::class,'json');
-//        dd($data->procedures);
-        foreach ($data->procedures as $d){
-
-            dd($d);
-            $procedureList = $this->procedureListRepository->findByProcedureQueuePatient($d->getProclistId(),$d->getProcedureId(),$d->getQueue(),$d->getPatientId());
-
-            if(!$procedureList){
-                // if row in procedure list not exist, create it new
-                // insert it code in Procedure List Service
+        $data = $this->serializer->deserialize($data,ProcListDTO::class.'[]','json');
+//        dd($data);
+        foreach ($data as $d) {
+            // check if data, don't have all input fields
+            // return error with message - 'send all input fields'
+            $result = $this->procedureListRepository->findBy([
+                'procedures'=>$d->procedure_id,
+                'source_id'=>$d->source_id,
+                'source_type' =>$d->source_type,
+                ]);
+            dump($result,"result");
+            if(!$result){
                 $procList = new ProcedureList();
-                $procRepository = $this->em->getRepository(Procedures::class);
-                $proc = $procRepository->find($d->getProcedureId());
-                if($proc){
-                    $procList->setProcedures($proc);
-                }
-                else{
-                    // if procedure not found return message
-                    // "procedure not found"
-                    // i have 2 way: if one field is not correct - ignore him and create or update ProcedureList
-                    // second is - return error and message "check your input fields: procedure not found"
-                }
-
-
-                //dd($d);
+                $procList->setProcedures($this->proceduresRepository->find($d->procedure_id));
+                $procList->setQueue($d->queue);
+                $procList->setSourceType($d->source_type);
+                $procList->setSourceId($d->source_id);
+                $this->em->persist($procList);
             }
-            else{
-                // if procedure list is exists
-
+            foreach ($result as $pl){
+                $pl->setQueue($d->queue);
+                $this->em->persist($pl);
             }
-            dump($procedureList);
+            dump($result);
+            $this->em->flush();
+
         }
-
-
-        dd();
+        dump($id);
+//        dd($procList);
         return [];
     }
 }

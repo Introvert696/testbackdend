@@ -16,6 +16,7 @@ class PatientsRepository extends ServiceEntityRepository
 
         parent::__construct($registry, Patients::class);
     }
+
     public function findAll() : array
     {
         return $this->createQueryBuilder('p')
@@ -35,37 +36,5 @@ class PatientsRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
-    public function findByCardNumber(int $cardNumber): array
-    {
-        return $this->createQueryBuilder('p')
-            ->where('p.card_number = :card_number')
-            ->setParameter('card_number',$cardNumber)
-            ->getQuery()
-            ->getResult();
-    }
 
-    //    /**
-    //     * @return Patients[] Returns an array of Patients objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('p.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
-
-    //    public function findOneBySomeField($value): ?Patients
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
 }

@@ -5,8 +5,14 @@ namespace App\DTO;
 
 class ProcListDTO
 {
-    public int $procedurelist_id;
+public ?int $proclist_id=null;
 
-    public array $procedures;
+public ?int $procedure_id=null;
+
+public ?int $queue=null;
+
+public ?string $source_type=null;
+
+public ?int $source_id=null;
 
 }

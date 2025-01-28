@@ -28,7 +28,7 @@ class ProcedureList
     private ?string $source_type;
 
     #[ORM\Column]
-    private ?bool $status = null;
+    private ?bool $status = false;
 
     public function getId(): ?int
     {
@@ -70,4 +70,33 @@ class ProcedureList
 
         return $this;
     }
+
+
+    public function getSourceId(): ?string
+    {
+        return $this->source_id;
+    }
+
+
+    public function setSourceId(?string $source_id): static
+    {
+        $this->source_id = $source_id;
+
+        return $this;
+    }
+
+
+    public function getSourceType(): ?string
+    {
+        return $this->source_type;
+    }
+
+
+    public function setSourceType(?string $source_type): static
+    {
+        $this->source_type = $source_type;
+
+        return $this;
+    }
+
 }
