@@ -20,13 +20,20 @@ class ProcedureListRepository extends ServiceEntityRepository
 
         parent::__construct($registry, ProcedureList::class);
     }
-    public function findByProcedureQueuePatient(int $procedureId,int $queue,int $patientId):array
+    public function findByProcedureQueuePatient(int $id, int $procedureId,int $queue,int $patientId):array
     {
-        $result = $this->em->createQuery('
-            SELECT pl.id, pl.procedures, pl.queue
+        $query = $this->em->createQuery('
+            SELECT pl.id,pl.queue,identity(pl.procedures) procedures, identity(pl.patients) patients,pl.status
             FROM App\Entity\ProcedureList pl
-');
-        dd($result->getResult());
-        return [];
+            where pl.procedures = :procid
+            and pl.queue = :que
+            and pl.patients = :patid
+            and pl.id = :id')
+        ->setParameter("procid",$procedureId)
+        ->setParameter('que',$queue)
+        ->setParameter('patid',$patientId)
+        ->setParameter('id',$id);
+        $result = $query->getResult();
+        return $result;
     }
 }

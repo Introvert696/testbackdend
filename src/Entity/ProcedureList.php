@@ -21,9 +21,11 @@ class ProcedureList
     #[ORM\Column(nullable: true)]
     private ?int $queue = null;
 
-    #[Ignore]
-    #[ORM\ManyToOne(inversedBy: 'procedureLists')]
-    private ?Patients $patients = null;
+    #[ORM\Column(nullable: true)]
+    private ?string $source_id;
+
+    #[ORM\Column(nullable: true)]
+    private ?string $source_type;
 
     #[ORM\Column]
     private ?bool $status = null;
@@ -53,18 +55,6 @@ class ProcedureList
     public function setQueue(?int $queue): static
     {
         $this->queue = $queue;
-
-        return $this;
-    }
-
-    public function getPatients(): ?Patients
-    {
-        return $this->patients;
-    }
-
-    public function setPatients(?Patients $patients): static
-    {
-        $this->patients = $patients;
 
         return $this;
     }

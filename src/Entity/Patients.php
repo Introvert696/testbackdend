@@ -26,12 +26,6 @@ class Patients
     #[ORM\OneToOne(mappedBy: 'patients', cascade: ['persist', 'remove'])]
     private ?ChambersPatients $chambersPatients = null;
 
-    /**
-     * @var Collection<int, ProcedureList>
-     */
-    #[Ignore]
-    #[ORM\OneToMany(targetEntity: ProcedureList::class, mappedBy: 'patients',fetch: 'LAZY')]
-    private Collection $procedureLists;
 
     public function __construct()
     {
@@ -80,36 +74,6 @@ class Patients
         }
 
         $this->chambersPatients = $chambersPatients;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, ProcedureList>
-     */
-    public function getProcedureLists(): Collection
-    {
-        return $this->procedureLists;
-    }
-
-    public function addProcedureList(ProcedureList $procedureList): static
-    {
-        if (!$this->procedureLists->contains($procedureList)) {
-            $this->procedureLists->add($procedureList);
-            $procedureList->setPatients($this);
-        }
-
-        return $this;
-    }
-
-    public function removeProcedureList(ProcedureList $procedureList): static
-    {
-        if ($this->procedureLists->removeElement($procedureList)) {
-            // set the owning side to null (unless already changed)
-            if ($procedureList->getPatients() === $this) {
-                $procedureList->setPatients(null);
-            }
-        }
 
         return $this;
     }

@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
-use App\DTO\ChamberDTO;
+use App\DTO\ProcListDTO;
+use App\Entity\ProcedureList;
+use App\Entity\Procedures;
 use App\Repository\ChambersRepository;
 use App\Repository\ProcedureListRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -48,12 +50,39 @@ class ChambersService
     }
     public function addProcedure($id,$data): array
     {
-        $data = $this->serializer->deserialize($data,ChamberDTO::class.'[]','json');
-        // check it in table, if exist update data
-        //
-        foreach ($data as $d){
-            dump($this->procedureListRepository->findByProcedureQueuePatient($d->getProcedureId(),$d->getQueue(),$d->getPatientId()));
+        $data = $this->serializer->deserialize($data,ProcListDTO::class,'json');
+//        dd($data->procedures);
+        foreach ($data->procedures as $d){
+
+            dd($d);
+            $procedureList = $this->procedureListRepository->findByProcedureQueuePatient($d->getProclistId(),$d->getProcedureId(),$d->getQueue(),$d->getPatientId());
+
+            if(!$procedureList){
+                // if row in procedure list not exist, create it new
+                // insert it code in Procedure List Service
+                $procList = new ProcedureList();
+                $procRepository = $this->em->getRepository(Procedures::class);
+                $proc = $procRepository->find($d->getProcedureId());
+                if($proc){
+                    $procList->setProcedures($proc);
+                }
+                else{
+                    // if procedure not found return message
+                    // "procedure not found"
+                    // i have 2 way: if one field is not correct - ignore him and create or update ProcedureList
+                    // second is - return error and message "check your input fields: procedure not found"
+                }
+
+
+                //dd($d);
+            }
+            else{
+                // if procedure list is exists
+
+            }
+            dump($procedureList);
         }
+
 
         dd();
         return [];
