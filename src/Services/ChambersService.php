@@ -60,7 +60,7 @@ class ChambersService
         foreach ($data as $d) {
             $result = $this->procedureListRepository->findBy([
                 'procedures' => $d->procedure_id,
-                'source_type' => 'chamber',
+                'source_type' => 'chambers',
                 'source_id' => $id
             ]);
             if (!$result) {
@@ -70,7 +70,7 @@ class ChambersService
                     $procedureList = new ProcedureList();
                     $procedureList->setProcedures($proc);
                     $procedureList->setQueue($d->queue);
-                    $procedureList->setSourceType("chamber");
+                    $procedureList->setSourceType("chambers");
                     $procedureList->setSourceId($id);
                     $procedureList->setStatus(false);
 
