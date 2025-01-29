@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\DTO\ProcListDTO;
+use App\Entity\Chambers;
 use App\Entity\ProcedureList;
 use App\Repository\ChambersRepository;
 use App\Repository\ProcedureListRepository;
@@ -53,34 +54,91 @@ class ChambersService
     public function addProcedure($id,$data): array
     {
         $data = $this->serializer->deserialize($data,ProcListDTO::class.'[]','json');
-//        dd($data);
-        foreach ($data as $d) {
-            // check if data, don't have all input fields
-            // return error with message - 'send all input fields'
-            $result = $this->procedureListRepository->findBy([
-                'procedures'=>$d->procedure_id,
-                'source_id'=>$d->source_id,
-                'source_type' =>$d->source_type,
-                ]);
-            dump($result,"result");
-            if(!$result){
-                $procList = new ProcedureList();
-                $procList->setProcedures($this->proceduresRepository->find($d->procedure_id));
-                $procList->setQueue($d->queue);
-                $procList->setSourceType($d->source_type);
-                $procList->setSourceId($d->source_id);
-                $this->em->persist($procList);
-            }
-            foreach ($result as $pl){
-                $pl->setQueue($d->queue);
-                $this->em->persist($pl);
-            }
-            dump($result);
-            $this->em->flush();
+        $responseData = [];
+        $responseData['message'] = '';
 
+        foreach ($data as $d) {
+            $result = $this->procedureListRepository->findBy([
+                'procedures' => $d->procedure_id,
+                'source_type' => 'chamber',
+                'source_id' => $id
+            ]);
+            if (!$result) {
+                // if not found chamber procedure in procedure_list
+                $proc = $this->proceduresRepository->find($d->procedure_id);
+                if ($proc) {
+                    $procedureList = new ProcedureList();
+                    $procedureList->setProcedures($proc);
+                    $procedureList->setQueue($d->queue);
+                    $procedureList->setSourceType("chamber");
+                    $procedureList->setSourceId($id);
+                    $procedureList->setStatus(false);
+
+                    $this->em->persist($procedureList);
+
+                    $responseData['message'] .= ' create new entry ';
+                    $responseData['data'][] = $procedureList;
+                } else {
+                    $responseData['message'] .= 'procedure not found ';
+                }
+
+            } else {
+                foreach ($result as $pl) {
+                    $pl->setQueue($d->queue);
+                }
+                $responseData['message'] .= ' update entry ';
+                $responseData['data'][] = $result;
+            }
         }
-        dump($id);
-//        dd($procList);
-        return [];
+        $this->em->flush();
+        return $this->jsonResponseHelpers->generate('Create/update procedure',200,$responseData['message'],$responseData['data']);
+    }
+    public function create(null|string $data):array
+    {
+        $data = $this->serializer->deserialize($data,Chambers::class,'json');
+        $chamber = $this->chambersRepository->findBy([
+            'number' =>$data->getNumber()
+        ]);
+        if(!$chamber){
+            $this->em->persist($data);
+            $this->em->flush();
+            $response = $this->jsonResponseHelpers->generate('Create',200,'Chamber has been create',Array($data));
+        }
+        else{
+            $response = $this->jsonResponseHelpers->generate('Error',400,'Chamber is created',$chamber);
+        }
+
+    return $response;
+    }
+    public function update(int $id,null|string $data):array
+    {
+        $data = $this->serializer->deserialize($data,Chambers::class,'json');
+        if($data->getNumber()){
+            $chamber = $this->chambersRepository->find($id);
+            $chamber->setNumber($data->getNumber());
+            $this->em->flush();
+            $response = $this->jsonResponseHelpers->generate('Updated',200,'Chamber has been updated', Array($chamber));
+        }
+        else {
+           $response = $this->jsonResponseHelpers->generate('No found',404,'number field - not found');
+       }
+       return $response;
+    }
+    public function delete(int $id): array
+    {
+        $chamber= $this->chambersRepository->find($id);
+        if($chamber){
+            $chamberPatient = $chamber->getChambersPatients()->getValues();
+            if($chamberPatient){
+                foreach ($chamberPatient as $cp){
+                    $this->em->remove($cp);
+                }
+            }
+            $this->em->remove($chamber);
+            $this->em->flush();
+            return $this->jsonResponseHelpers->generate('Delete',200,'chamber '.$id.' has been delete');
+            }
+
+        return $this->jsonResponseHelpers->generate('Not Found',404,'Chamber '.$id.' - not found');
     }
 }

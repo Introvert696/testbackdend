@@ -14,8 +14,7 @@ class ChambersPatients
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(inversedBy: 'chambersPatients')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\ManyToOne( inversedBy: 'chambersPatients')]
     private ?Chambers $chambers = null;
 
     #[ORM\OneToOne(inversedBy: 'chambersPatients', cascade: ['persist', 'remove'])]
@@ -42,7 +41,6 @@ class ChambersPatients
 
     public function getPatients(): ?Patients
     {
-//        dd($this);
         return $this->patients;
     }
 

@@ -7,8 +7,8 @@ class JsonResponseHelper
     /**
      * @param string $type response type
      * @param int $statusCode status code
-     * @param string $message
-     * @param array $data   some data
+     * @param string $message message for display
+     * @param array|null $data some data
      * @return array
      */
     public function generate(string $type,int $statusCode,string $message,array $data = null): array{

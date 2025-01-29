@@ -27,7 +27,6 @@ final class ChamberController extends AbstractController
     public function show(int $id): JsonResponse
     {
        $response = $this->chambersService->get($id);
-
        return $this->json($response);
     }
     #[Route('/chambers/{id}/procedures', name: 'show_chambers_procedures', methods: ["GET"])]
@@ -40,6 +39,24 @@ final class ChamberController extends AbstractController
     public function updateProcedures(Request $request,int $id): JsonResponse
     {
         $response = $this->chambersService->addProcedure($id,$request->getContent());
+        return $this->json($response);
+    }
+    #[Route('/chambers', name: 'store_chambers', methods: ["POST"])]
+    public function store(Request $request): JsonResponse
+    {
+        $response = $this->chambersService->create($request->getContent());
+        return $this->json($response);
+    }
+    #[Route('/chambers/{id}', name: 'update_chambers', methods: ["PUT"])]
+    public function update(Request $request,int|null $id): JsonResponse
+    {
+        $response = $this->chambersService->update($id,$request->getContent());
+        return $this->json($response);
+    }
+    #[Route('/chambers/{id}', name: 'delete_chambers', methods: ["DELETE"])]
+    public function delete(int|null $id): JsonResponse
+    {
+        $response = $this->chambersService->delete($id);
         return $this->json($response);
     }
 }
