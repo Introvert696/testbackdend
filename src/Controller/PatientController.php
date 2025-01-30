@@ -20,23 +20,20 @@ final class PatientController extends AbstractController
     #[Route('/',name:'index_patients',methods: ['GET'])]
     public function index(): JsonResponse
     {
-        $response = $this->patientsServices->all();
-        return $this->json($response,$response['code']);
-    }
-    #[Route('/',name:'store_patients',methods: ['POST'])]
-    public function store(Request $request): JsonResponse
-    {
-        $result = $this->patientsServices->createOrFind($request->getContent());
-        return $this->json($result,202);
+        return $this->json($this->patientsServices->all());
     }
     #[Route('/{id}', name: 'show_patients', defaults: ['id'=>null], methods: ['GET'])]
     public function get(EntityManagerInterface $em,int|null $id): JsonResponse
     {
-        $response  = $this->patientsServices->about($id);
         // card_number and cardNumber - fix it
-        return $this->json($response);
+        return $this->json($this->patientsServices->about($id));
     }
-
+    #[Route(name:'store_patients',methods: ['POST'])]
+    public function store(Request $request): JsonResponse
+    {
+        $response = $this->patientsServices->createOrFind($request->getContent());
+        return $this->json($response,$response['code']);
+    }
     #[Route('/{id}', name: 'update_patients', defaults: ['id'=>null], methods: ['PUT'])]
     public function update(Request $request,int|null $id): JsonResponse
     {

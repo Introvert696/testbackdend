@@ -25,12 +25,14 @@ final class ProcedureController extends AbstractController
     #[Route( name: 'store_procedure',methods: ['POST'])]
     public function store(Request $request,ProceduresService $proceduresService): JsonResponse
     {
-        return $this->json($proceduresService->store($request->getContent()));
+        $response = $proceduresService->store($request->getContent());
+        return $this->json($response,$response['code']);
     }
     #[Route('/{id}', name: 'update_procedure',methods: ['PUT'])]
     public function update(Request $request,ProceduresService $proceduresService,$id): JsonResponse
     {
-        return $this->json($proceduresService->update($id,$request->getContent()));
+        $response = $proceduresService->update($id,$request->getContent());
+        return $this->json($response,$response['code']);
     }
     #[Route('/{id}', name: 'delete_procedure',methods: ['Delete'])]
     public function delete(ProceduresService $proceduresService,$id): JsonResponse
