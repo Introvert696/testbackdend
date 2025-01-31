@@ -25,7 +25,7 @@ class PatientsRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function get(int $id): array
+    public function getMore(int $id): array
     {
         return $this->createQueryBuilder('p')
             ->select('p', 'c', 'cp')  // Выбираем только нужные столбцы

@@ -2,10 +2,8 @@
 
 namespace App\Services;
 
-use App\Entity\Chambers;
-use App\Entity\Patients;
-use App\Entity\ProcedureList;
 use App\Entity\Procedures;
+use App\Repository\ChambersRepository;
 use App\Repository\ProceduresRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -13,11 +11,11 @@ use Symfony\Component\Serializer\SerializerInterface;
 class ProceduresService
 {
     public function __construct(
-        // get repository from entity manager
         private readonly JsonResponseHelper $jsonResponseHelper,
         private readonly EntityManagerInterface $em,
         private readonly SerializerInterface $serializer,
         private readonly ProceduresRepository $proceduresRepository,
+        private readonly ChambersRepository $chambersRepository,
     )
     {}
     public function all(): array
@@ -27,11 +25,10 @@ class ProceduresService
     }
     public function about(int $id): array
     {
-        $procedureListRepository = $this->em->getRepository(ProcedureList::class);
         $response = [];
         $procedure = $this->proceduresRepository->find($id);
         $response['procedure']=$procedure;
-        $procedureList = $procedureListRepository->findBy([
+        $procedureList = $this->procedureListRepository->findBy([
             'procedures'=>$procedure->getId(),
             'status' => 1
         ]);
@@ -41,7 +38,6 @@ class ProceduresService
     }
     public function getSourceItem(array $procedureList): array
     {
-        $chambersRepository = $this->em->getRepository(Chambers::class);
         $response = [];
 
         foreach ($procedureList as $pl){
@@ -50,7 +46,7 @@ class ProceduresService
                 $response['patients'][]=$patient;
             }
             else if($pl->getSourceType()=='chambers'){
-                $chamber = $chambersRepository->find($pl->getSourceId());
+                $chamber = $this->chambersRepository->find($pl->getSourceId());
                 $response['chamber'][]=$chamber;
             }
         }
@@ -58,7 +54,6 @@ class ProceduresService
     }
     public function store($data):array{
         $data = $this->serializer->deserialize($data,Procedures::class,'json');
-
         if($data->getTitle() and $data->getDescription()){
             $issetProcedure = $this->proceduresRepository->findBy([
                 'title' => $data->getTitle()
@@ -96,6 +91,7 @@ class ProceduresService
     }
     public function delete(int $id): array
     {
+        // test it maybe return error if procedure not found
         $procedure = $this->proceduresRepository->find($id);
         $this->em->remove($procedure);
         $this->em->flush();

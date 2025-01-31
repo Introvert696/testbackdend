@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\DTO\PatientDTO;
-use App\Entity\ChambersPatients;
 use App\Entity\Patients;
 use App\Repository\ChambersRepository;
 use App\Repository\PatientsRepository;
@@ -20,6 +19,7 @@ class PatientsServices
         private readonly PatientsRepository $patientsRepository,
         private readonly ChambersRepository $chambersRepository,
         private readonly ProcedureListRepository $procedureListRepository,
+        private readonly ChambersPatientsService $chambersPatientsService,
     )
     {
     }
@@ -55,15 +55,12 @@ class PatientsServices
             if($updatedData->name){
                 $patient->setName($updatedData->name);
             }
-            // create someone response when chamber not found
             if ($chamber) {
                 $chamberPatients = $patient->getChambersPatients();
                 if ($chamberPatients) {
                     $chamberPatients->setChambers($chamber);
                 } else {
-                    $chamberPatients = new ChambersPatients();
-                    $chamberPatients->setPatients($patient);
-                    $chamberPatients->setChambers($chamber);
+                    $chamberPatients = $this->chambersPatientsService->create($patient,$chamber);
                     $this->em->persist($chamberPatients);
                 }
             }
@@ -74,7 +71,7 @@ class PatientsServices
     }
     public function remove($id): array
     {
-        $patient = $this->patientsRepository->get($id);
+        $patient = $this->patientsRepository->getMore($id);
         if(!$patient){
             $response = $this->responseHelper->generate('Not Found',404,"Patient not found");
         }
@@ -90,6 +87,7 @@ class PatientsServices
     }
     public function about(int $id): array
     {
+        // test it
         $patient = $this->patientsRepository->find($id);
         $procList = $this->procedureListRepository->findBy(['source_type'=>'patients','source_id'=>$id]);
         $data['patient'] = $patient;
