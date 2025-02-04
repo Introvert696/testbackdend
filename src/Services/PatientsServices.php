@@ -71,6 +71,7 @@ class PatientsServices
     }
     public function remove($id): array
     {
+        // обработать другие таблшицы
         $patient = $this->patientsRepository->getMore($id);
         if(!$patient){
             $response = $this->responseHelper->generate('Not Found',404,"Patient not found");
