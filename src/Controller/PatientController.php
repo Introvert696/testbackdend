@@ -34,7 +34,7 @@ final class PatientController extends AbstractController
         $response = $this->patientsServices->createOrFind($request->getContent());
         return $this->json($response,$response['code']);
     }
-    #[Route('/{id}', name: 'update_patients', defaults: ['id'=>null], methods: ['PUT'])]
+    #[Route('/{id}', name: 'update_patients', defaults: ['id'=>null], methods: ['PATCH'])]
     public function update(Request $request,int|null $id): JsonResponse
     {
         $response = $this->patientsServices->update($id,$request->getContent());

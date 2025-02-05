@@ -19,7 +19,7 @@ class Patients
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
-    #[ORM\Column(unique: true)]
+    #[ORM\Column(name: "card_number",type: 'integer', unique: true)]
     private ?int $card_number = null;
 
     #[Ignore]
@@ -54,9 +54,9 @@ class Patients
         return $this->card_number;
     }
 
-    public function setCardNumber(int $card_number): static
+    public function setCardNumber(int $cardNumber): static
     {
-        $this->card_number = $card_number;
+        $this->card_number = $cardNumber;
 
         return $this;
     }

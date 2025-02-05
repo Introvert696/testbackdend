@@ -7,6 +7,9 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Ignore;
+use Nelmio\ApiDocBundle\Attribute\Model;
+use OpenApi\Attributes as OA;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ChambersRepository::class)]
 class Chambers
@@ -14,16 +17,21 @@ class Chambers
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[OA\Property(description: 'Unique identifier')]
+    #[Assert\Type('integer')]
     private ?int $id = null;
 
     #[ORM\Column(unique: true)]
+    #[OA\Property(type: 'integer')]
+    #[Assert\Type('integer')]
     private ?int $number = null;
 
     /**
      * @var Collection<int, ChambersPatients>
      */
     #[Ignore]
-    #[ORM\OneToMany(targetEntity: ChambersPatients::class, mappedBy: 'chambers')]
+    #[ORM\OneToMany(targetEntity: ChambersPatients::class, mappedBy: 'chambers',cascade: ['persist','remove'])]
+    #[OA\Property(ref: new Model(type: ChambersPatients::class))]
     private Collection $chambersPatients;
 
     public function __construct()

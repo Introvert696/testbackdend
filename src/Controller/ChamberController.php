@@ -2,11 +2,14 @@
 
 namespace App\Controller;
 
+use App\Entity\Chambers;
 use App\Services\ChambersService;
+use Nelmio\ApiDocBundle\Attribute\Model;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
+use OpenApi\Attributes as OA;
 
 #[Route('/api/chambers')]
 final class ChamberController extends AbstractController
@@ -15,7 +18,17 @@ final class ChamberController extends AbstractController
         private readonly ChambersService $chambersService
     )
     {}
+
     #[Route('/', name: 'index_chambers', methods: ["GET"])]
+    #[OA\Response(
+            response: 200,
+            description: 'Return all chambers',
+            content: new OA\JsonContent(
+                type: 'array',
+                items: new OA\Items(ref: new Model(type:Chambers::class, groups:['full']))
+        )
+    )]
+    #[OA\Tag(name: 'index')]
     public function index(): JsonResponse
     {
         $response = $this->chambersService->all();
@@ -36,14 +49,16 @@ final class ChamberController extends AbstractController
     #[Route('/{id}/procedures', name: 'update_chambers_procedures', methods: ["POST"])]
     public function updateProcedures(Request $request,int $id): JsonResponse
     {
-        return $this->json($this->chambersService->addProcedure($id,$request->getContent()));
+        $response = $this->chambersService->addProcedure($id,$request->getContent());
+        return $this->json($response,$response['code']);
     }
     #[Route(name: 'store_chambers', methods: ["POST"])]
     public function store(Request $request): JsonResponse
     {
-        return $this->json($this->chambersService->create($request->getContent()));
+        $response = $this->chambersService->create($request->getContent());
+        return $this->json($response,$response['code']);
     }
-    #[Route('/{id}', name: 'update_chambers', methods: ["PUT"])]
+    #[Route('/{id}', name: 'update_chambers', methods: ["PATCH"])]
     public function update(Request $request,int|null $id): JsonResponse
     {
         $response = $this->chambersService->update($id,$request->getContent());

@@ -2,6 +2,10 @@
 
 namespace App\Services;
 
+use Symfony\Component\Serializer\Exception\NotEncodableValueException;
+use Symfony\Component\Serializer\SerializerInterface;
+use App\DTO\ChamberDTO;
+
 class JsonResponseHelper
 {
     /**
@@ -11,7 +15,7 @@ class JsonResponseHelper
      * @param array|null $data some data
      * @return array
      */
-    public function generate(string $type,int $statusCode,string $message,array $data = null): array{
+    public function generate(string $type,int $statusCode,string $message,array|object $data = null): array{
         $response['type'] = $type;
         $response['code'] = $statusCode;
         $response['message'] = $message;
@@ -19,5 +23,9 @@ class JsonResponseHelper
             $response['data'] = $data;
         }
         return $response;
+    }
+    public function first(array $data): object
+    {
+        return $data[0];
     }
 }
