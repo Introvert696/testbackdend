@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\DTO\ChamberDTO;
+use App\DTO\ProcListDTO;
 use App\Entity\Chambers;
 use App\Entity\ProcedureList;
 use App\Repository\ChambersRepository;
@@ -75,10 +76,19 @@ class ChambersService
     {
         $procedures = [];
         $chamber = $this->chambersRepository->find($id);
-        $data = $this->checkData($data);
-        dd($data);
-        if(!$chamber or !$data){
-            return $this->jsonResponseHelpers->generate('Not Found',404,'Chamber - not found');
+        $data = $this->checkData($data,'App\Entity\Chambers');
+        if(!$data)
+        {
+            return $this->jsonResponseHelpers->generate('Error',402,'Check fields');
+        }
+        foreach ($data as $d){
+            $d= $this->validateProcListDTO($d);
+           if($d===null){
+               return $this->jsonResponseHelpers->generate('Error',402,'Check fields');
+           }
+        }
+        if(!$chamber or ((!$data) and (!is_array($data)))){
+            return $this->jsonResponseHelpers->generate('Error',402,'Check fields');
         }
         $procedureLists = $this->procedureListRepository->findBy([
                 'source_type' => 'chambers',
@@ -93,23 +103,25 @@ class ChambersService
         // валидируем данные что бы все поля были заполнены, если не заполнены, то ворачиваем false либо null
         foreach ($data as $d){
 
-
             if($d === null){
                 return $this->jsonResponseHelpers->generate('Not Found',404,'Procedure - not found');
             }
             $proc =$this->procedureListService->validate($d);
+            if(!$proc){
+                return $this->jsonResponseHelpers->generate('Not Valid',502,'Procedure not valid');
+            }
             $procList = $this->procedureListService->procListDtoToProcList($proc,$id);
             $this->em->persist($procList);
-            // сделать коневертер для номального ответа
             $procedures[]=$this->convertToDTO($procList);
         }
         $this->em->flush();
 
-        return $this->jsonResponseHelpers->generate('Update/Create',200,'Chambers procedure has been update',$procedures);
+        return $this->jsonResponseHelpers->generate('Update',200,'Chambers procedure has been update',$procedures);
     }
     public function create(string $data):array
     {
-        $data = $this->checkData($data);
+        $data = $this->checkData($data,'App\Entity\Chambers');
+
         if($data === null){
             return $this->jsonResponseHelpers->generate('Error',400,'check your request body');
         }
@@ -119,15 +131,19 @@ class ChambersService
         if($chamber){
             return $this->jsonResponseHelpers->generate('Error',400,'Chamber is exists',$this->first($chamber) );
         }
-        $this->em->persist($this->convertChamberDTOtoChamber($data));
+
+        $this->em->persist($data);
         $this->em->flush();
 
         return $this->jsonResponseHelpers->generate('Create',200,'Chamber has been create',$data);
     }
     public function update(int $id,null|string $data):array
     {
-        $data = $this->checkData($data);
-//        dd($data);
+        $data = $this->checkData($data,'App\Entity\Chambers');
+
+        if(!$data){
+            return $this->jsonResponseHelpers->generate('Error',400,'check your request body');
+        }
         if(gettype($data->getNumber())==="integer"){
             $chamber = $this->chambersRepository->find($id);
             $findChamber = $this->chambersRepository->findBy([
@@ -196,11 +212,11 @@ class ChambersService
 
         return $chamber;
     }
-    public function checkData($data): array|null
+    public function checkData($data,$class): Chambers|ChamberDTO|array|null
     {
 
         try{
-            $data = $this->serializer->deserialize($data,ChamberDTO::class.'[]','json');
+            $data = $this->serializer->deserialize($data,$class,'json');
         }
         catch (NotEncodableValueException){
             return null;
@@ -211,6 +227,15 @@ class ChambersService
     public function first(array $data): object
     {
         return $data[0];
+    }
+    public function validateProcListDTO(ProcListDTO $data): array|object|null
+    {
+        if($data->procedure_id and $data->queue and $data->status){
+            return $data;
+        }
+        else{
+            return null;
+        }
     }
 
 }
