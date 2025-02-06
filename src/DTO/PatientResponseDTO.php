@@ -8,6 +8,7 @@ class PatientResponseDTO
     public ?string $name= null;
     public ?int $card_number= null;
     public ?int $chamber = null;
+    public ?array $procedures ;
 
     public function getId(): int
     {
@@ -50,6 +51,22 @@ class PatientResponseDTO
 
         return $this;
     }
+    public function getProcedures(): ?array
+    {
+        return $this->procedures;
+    }
+    public function setProcedures(?array $procedures): static
+    {
+        $this->procedures = $procedures;
+
+        return $this;
+    }
+    public function addProc($proc): static
+    {
+        $this->procedures[] = $proc;
+        return $this;
+    }
+
 
 
 }

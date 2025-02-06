@@ -26,9 +26,6 @@ class Chambers
     #[Assert\Type('integer')]
     private ?int $number = null;
 
-    /**
-     * @var Collection<int, ChambersPatients>
-     */
     #[Ignore]
     #[ORM\OneToMany(targetEntity: ChambersPatients::class, mappedBy: 'chambers',cascade: ['persist','remove'])]
     #[OA\Property(ref: new Model(type: ChambersPatients::class))]

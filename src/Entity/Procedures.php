@@ -27,7 +27,7 @@ class Procedures
      * @var Collection<int, ProcedureList>
      */
     #[Ignore]
-    #[ORM\OneToMany(targetEntity: ProcedureList::class, mappedBy: 'procedures')]
+    #[ORM\OneToMany(targetEntity: ProcedureList::class, mappedBy: 'procedures',cascade: ['persist','remove'])]
     private Collection $procedureLists;
 
     public function __construct()

@@ -2,25 +2,22 @@
 
 namespace App\Services;
 
-use App\DTO\PatientDTO;
-use App\DTO\PatientResponseDTO;
-use App\Entity\Patients;
 use App\Repository\ChambersRepository;
 use App\Repository\PatientsRepository;
 use App\Repository\ProcedureListRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\Serializer\SerializerInterface;
 
 class PatientsServices
 {
     public function __construct(
-        private readonly SerializerInterface $serializer,
         private readonly EntityManagerInterface $em,
         private readonly JsonResponseHelper $responseHelper,
         private readonly PatientsRepository $patientsRepository,
         private readonly ChambersRepository $chambersRepository,
         private readonly ProcedureListRepository $procedureListRepository,
         private readonly ChambersPatientsService $chambersPatientsService,
+        private readonly AdaptersService $adaptersService,
+        private readonly JsonResponseHelper $jsonResponseHelper,
     )
     {
     }
@@ -30,7 +27,7 @@ class PatientsServices
     }
     public function createOrFind($data):array
     {
-        $data = $this->checkData($data,'App\Entity\Patients','Patients');
+        $data = $this->jsonResponseHelper->checkData($data,'App\Entity\Patients');
         if(!$data){
             return $this->responseHelper->generate('Error',502,'Check fields');
         }
@@ -48,18 +45,20 @@ class PatientsServices
     }
     public function update($id,$data): array
     {
-        $updatedData = $this->checkData($data,'App\DTO\PatientDTO');
+        $updatedData = $this->jsonResponseHelper->checkData($data,'App\DTO\PatientDTO');
         $patient = $this->patientsRepository->find($id);
         if(!$updatedData){
             return $this->responseHelper->generate('Error',402,'Field not filled');
         }
         $chamber = $updatedData->chamber!=null?$this->chambersRepository->find($updatedData->chamber):null;
+        // совместить
         if(!$patient){
             return $this->responseHelper->generate('Not Found',404,'Patient not found');
         }
         if($updatedData->name){
             $patient->setName($updatedData->name);
         }
+        // совместить
         if (!$chamber) {
             return $this->responseHelper->generate('Not found',404,'Chamber Not Found');
         }
@@ -72,7 +71,7 @@ class PatientsServices
         }
         $this->em->flush();
 
-        return $this->responseHelper->generate('Ok',200,'Patient has been updated',$this->adapterPatientToPatientResponseDTO($patient) );
+        return $this->responseHelper->generate('Ok',200,'Patient has been updated',$this->adaptersService->patientToPatientResponseDTO($patient) );
     }
     public function remove($id): array
     {
@@ -90,32 +89,20 @@ class PatientsServices
         $this->em->remove($this->responseHelper->first($patient));
         $this->em->flush();
 
-        return $this->responseHelper->generate('Ok',200,"Patient has been delete");;
+        return $this->responseHelper->generate('Ok',204,"Patient has been delete");
     }
     public function about(int $id): array
     {
-        // протестить эту функцию
         $patient = $this->patientsRepository->find($id);
+        if(!$patient){
+            return $this->responseHelper->generate('Not found',404,"Patient not found");
+        }
         $procList = $this->procedureListRepository->findBy(['source_type'=>'patients','source_id'=>$id]);
-        $data['patient'] = $patient;
-        $data['procedure_list'] = $procList;
+        $patient = $this->adaptersService->patientToPatientResponseDTO($patient,$procList);
 
-        return $this->responseHelper->generate('Ok',200,"Patient info",$data);
+        return $this->responseHelper->generate('Ok',200,"Patient info",$patient);
     }
-    public function checkData($data,$classname): null|object
-    {
-        if(!class_exists($classname)){
-            return null;
-        }
-        try{
-            $data = $this->serializer->deserialize(data: $data,type: $classname,format:'json');
-        }
-        catch (\Exception){
-            return null;
-        }
-        return $data;
-    }
-    public function validatePatient(Patients $data): null|Patients
+    public function validatePatient(object $data): null|object
     {
         if(($data->getName()!==null) and ($data->getCardNumber()!== null)){
             return $data;
@@ -124,15 +111,6 @@ class PatientsServices
             return null;
         }
     }
-    public function adapterPatientToPatientResponseDTO(Patients $patients): PatientResponseDTO
-    {
-        $patientResponse = new PatientResponseDTO();
-        $patientResponse->setId($patients->getId());
-        $patientResponse->setName($patients->getName());
-        $patientResponse->setCardNumber($patients->getCardNumber());
-        $patientResponse->setChamber($patients->getChambersPatients()->getChambers()->getId());
 
-        return $patientResponse;
-    }
 
 }

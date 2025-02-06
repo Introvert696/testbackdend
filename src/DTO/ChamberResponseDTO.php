@@ -1,9 +1,36 @@
 <?php
 
-class ChamberResponse
+namespace App\DTO;
+
+use App\Entity\Patients;
+use Nelmio\ApiDocBundle\Attribute\Model;
+use OpenApi\Attributes as OA;
+
+class ChamberResponseDTO
 {
+    #[OA\Property(type: 'integer')]
     public ?int $id=null;
+    #[OA\Property(type: 'integer')]
     public ?int $number=null;
+    #[OA\Property(
+        type: 'array',
+        items: new OA\Items(
+            ref: new Model(type:Patients::class)
+        ),
+        example: [
+            [
+                "id"=>1,
+                "name"=>"FFF FFF FFF",
+                "card_number"=>23423
+            ],
+            [
+                "id"=>1,
+                "name"=>"FFF FFF FFF",
+                "card_number"=>23423
+            ],
+        ]
+    )]
+
     public ?array $patients = [];
 
     public function getId(): ?int

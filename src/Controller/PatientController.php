@@ -23,10 +23,10 @@ final class PatientController extends AbstractController
         return $this->json($this->patientsServices->all());
     }
     #[Route('/{id}', name: 'show_patients', defaults: ['id'=>null], methods: ['GET'])]
-    public function get(EntityManagerInterface $em,int|null $id): JsonResponse
+    public function get(int|null $id): JsonResponse
     {
-        // card_number and cardNumber - fix it
-        return $this->json($this->patientsServices->about($id));
+        $response = $this->patientsServices->about($id);
+        return $this->json($response,$response['code']);
     }
     #[Route(name:'store_patients',methods: ['POST'])]
     public function store(Request $request): JsonResponse
@@ -46,5 +46,4 @@ final class PatientController extends AbstractController
         $response = $this->patientsServices->remove($id);
         return $this->json($response,$response['code']);
     }
-
 }

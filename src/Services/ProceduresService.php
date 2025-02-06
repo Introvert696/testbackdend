@@ -3,19 +3,18 @@
 namespace App\Services;
 
 use App\Entity\Procedures;
-use App\Repository\ChambersRepository;
+use App\Repository\ProcedureListRepository;
 use App\Repository\ProceduresRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\Serializer\SerializerInterface;
 
 class ProceduresService
 {
     public function __construct(
         private readonly JsonResponseHelper $jsonResponseHelper,
         private readonly EntityManagerInterface $em,
-        private readonly SerializerInterface $serializer,
         private readonly ProceduresRepository $proceduresRepository,
-        private readonly ChambersRepository $chambersRepository,
+        private readonly ProcedureListRepository $procedureListRepository,
+        private readonly AdaptersService $adaptersService
     )
     {}
     public function all(): array
@@ -25,76 +24,79 @@ class ProceduresService
     }
     public function about(int $id): array
     {
-        $response = [];
         $procedure = $this->proceduresRepository->find($id);
-        $response['procedure']=$procedure;
-        $procedureList = $this->procedureListRepository->findBy([
-            'procedures'=>$procedure->getId(),
+        if(!$procedure){
+            return $this->jsonResponseHelper->generate('Not found',404,'Procedure not found');
+        }
+        $procedureResponse = $this->adaptersService->procedureToProcedureResponseDTO($procedure);
+        $entities = $this->procedureListRepository->findBy([
+            'source_id'=>$procedure->getId(),
             'status' => 1
         ]);
-        $response['data'] = $this->getSourceItem($procedureList);
-
-        return $this->jsonResponseHelper->generate('OK',200,'about procedure info',$response);
-    }
-    public function getSourceItem(array $procedureList): array
-    {
-        $response = [];
-
-        foreach ($procedureList as $pl){
-            if($pl->getSourceType()=='patients'){
-                $patient = $this->proceduresRepository->find($pl->getSourceId());
-                $response['patients'][]=$patient;
-            }
-            else if($pl->getSourceType()=='chambers'){
-                $chamber = $this->chambersRepository->find($pl->getSourceId());
-                $response['chamber'][]=$chamber;
-            }
+        if(!$entities) {
+            return $this->jsonResponseHelper->generate('OK', 200, 'Procedure ingo', $procedureResponse);
         }
-        return $response;
+        foreach ($entities as $et){
+            $procedureResponse->addEntity($this->adaptersService->procListToProcListRespDTO($et));
+        }
+
+        return $this->jsonResponseHelper->generate('OK',200,'about procedure info',$procedureResponse);
     }
+    // переделать
     public function store($data):array{
-        $data = $this->serializer->deserialize($data,Procedures::class,'json');
-        if($data->getTitle() and $data->getDescription()){
-            $issetProcedure = $this->proceduresRepository->findBy([
-                'title' => $data->getTitle()
-            ]);
-            if(!$issetProcedure){
-                $this->em->persist($data);
-                $this->em->flush();
-            }
-            else{
-                return $this->jsonResponseHelper->generate('Conflict',402,'title has busy',Array($issetProcedure));
-            }
+        $data = $this->jsonResponseHelper->checkData($data,'App\Entity\Procedures');
+        $data = $this->validator($data);
+        if(!$data){
+            return $this->jsonResponseHelper->generate('Error',422,'check your fields');
         }
-        return $this->jsonResponseHelper->generate('create',200,'procedure has been create',Array($data));
+        $issetProcedure = $this->proceduresRepository->findBy([
+            'title' => $data->getTitle()
+        ]);
+        if($issetProcedure){
+            return $this->jsonResponseHelper->generate('Conflict',409,'title has exists',$this->jsonResponseHelper->first($issetProcedure));
+        }
+        $this->em->persist($data);
+        $this->em->flush();
+
+        return $this->jsonResponseHelper->generate('create',200,'Procedure has been create',$data);
     }
     public function update(int $id,$data): array
     {
-        $data = $this->serializer->deserialize($data,Procedures::class,'json');
         $procedure = $this->proceduresRepository->find($id);
-        if($procedure){
-            if($data->getTitle() and $data->getDescription()){
-                $procedure->setTitle($data->getTitle());
-                $procedure->setDescription($data->getDescription());
-                $this->em->flush();
-                $response = $this->jsonResponseHelper->generate('Update',200,'procedure has been updated',Array($procedure));
-            }
-            else {
-                $response = $this->jsonResponseHelper->generate('Empty data',400,'Field not filled',Array($procedure));
-            }
+        if(!$procedure) {
+            return $this->jsonResponseHelper->generate('Not Found',404,'Procedure not found');
+        }
+        $data = $this->jsonResponseHelper->checkData($data,'App\Entity\Procedures');
+        $data = $this->validator($data);
+        if(!$data){
+            return $this->jsonResponseHelper->generate('Error',422,'Check your fields');
+        }
+        $procedure->setTitle($data->getTitle());
+        $procedure->setDescription($data->getDescription());
+        $this->em->flush();
 
-        }
-        else {
-            $response = $this->jsonResponseHelper->generate('Not Found',404,'Procedure not found');
-        }
-        return $response;
+        return $this->jsonResponseHelper->generate('Update',200,'Procedure has been updated',$procedure);
     }
     public function delete(int $id): array
     {
-        // test it maybe return error if procedure not found
         $procedure = $this->proceduresRepository->find($id);
+        if(!$procedure){
+           return $this->jsonResponseHelper->generate('Not Found',404,'Procedure not found');
+        }
         $this->em->remove($procedure);
         $this->em->flush();
         return $this->jsonResponseHelper->generate('Delete',200,'procedure has been delete');
+    }
+
+    public function validator($data): null|Procedures
+    {
+        if($data == null){
+            return null;
+        }
+        if(($data->getTitle()!==null)and($data->getDescription()!==null)){
+            return $data;
+        }else{
+            return null;
+        }
     }
 }

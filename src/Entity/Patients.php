@@ -4,7 +4,7 @@ namespace App\Entity;
 
 use App\Repository\PatientsRepository;
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
+use OpenApi\Attributes as OA;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Ignore;
 
@@ -14,12 +14,15 @@ class Patients
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[OA\Property(type: 'integer')]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[OA\Property(type: 'string')]
     private ?string $name = null;
 
     #[ORM\Column(name: "card_number",type: 'integer', unique: true)]
+    #[OA\Property(type: 'integer')]
     private ?int $card_number = null;
 
     #[Ignore]
