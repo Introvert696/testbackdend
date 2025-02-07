@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\DTO\ChamberResponseDTO;
 use App\DTO\ProcListDTO;
+use App\Entity\ProcedureList;
 use App\Repository\ChambersRepository;
 use App\Repository\ProcedureListRepository;
 use App\DTO\ChamberProcedureDTO;
@@ -50,14 +51,7 @@ class ChambersService
         $procList = $this->procedureListRepository->findBy(['source_type'=>'chambers','source_id'=>$id]);
         $data = [];
         foreach ($procList as $pl){
-            // создать новый метод
-            $responseObject= new ChamberProcedureDTO();
-            $responseObject->setId($pl->getProcedures()->getId());
-            $responseObject->setQueue($pl->getQueue());
-            $responseObject->setTitle($pl->getProcedures()->getTitle());
-            $responseObject->setDesc($pl->getProcedures()->getDescription());
-            $responseObject->setStatus($pl->getStatus());
-            $data[] = $responseObject;
+            $data[] = $this->createChamberProcedureDTO($pl);
         }
         $response = $this->jsonResponseHelpers->generate('Ok',200,'Procedures, chamber - '.$id ,$data);
         if(!$data){
@@ -71,7 +65,6 @@ class ChambersService
         $procedures = [];
         $chamber = $this->chambersRepository->find($id);
         $data = $this->jsonResponseHelpers->checkData($data,'App\DTO\ProcListDTO[]');
-//        dd($data);
         if(!$data)
         {
             return $this->jsonResponseHelpers->generate('Error',402,'Check fields');
@@ -186,6 +179,17 @@ class ChambersService
         else{
             return null;
         }
+    }
+    public function createChamberProcedureDTO(ProcedureList $pl): ChamberProcedureDTO
+    {
+        $responseObject= new ChamberProcedureDTO();
+        $responseObject->setId($pl->getProcedures()->getId());
+        $responseObject->setQueue($pl->getQueue());
+        $responseObject->setTitle($pl->getProcedures()->getTitle());
+        $responseObject->setDesc($pl->getProcedures()->getDescription());
+        $responseObject->setStatus($pl->getStatus());
+
+        return $responseObject;
     }
 
 }

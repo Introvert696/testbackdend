@@ -2,8 +2,6 @@
 
 namespace App\DTO;
 
-use App\Entity\Patients;
-use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 
 class ResponseDTO

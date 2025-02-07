@@ -15,22 +15,5 @@ class ChambersRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Chambers::class);
     }
-    public function findByNumber($number):Chambers|null
-    {
-
-        $result = $this->createQueryBuilder('c')
-            ->andWhere('c.number = :number')
-            ->setParameter('number' ,$number)
-            ->getQuery()
-            ->getResult();
-
-        if(!$result){
-            return null;
-        }
-        else{
-            return $result[0];
-        }
-
-    }
 
 }

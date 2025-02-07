@@ -180,8 +180,8 @@ final class ProcedureController extends AbstractController
                 type: 'object',
             ),
             example: [
-                "title"=>"dfdfdf",
-                "description"=>"dsfsdfs"
+                "title"=>"Test",
+                "description"=>"Test desc"
             ]
         )
     )]

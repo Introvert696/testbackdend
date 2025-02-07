@@ -2,13 +2,11 @@
 
 namespace App\Services;
 
-use App\DTO\ChamberDTO;
 use App\DTO\ChamberProcedureDTO;
 use App\DTO\PatientResponseDTO;
 use App\DTO\ProcedureResponseDTO;
 use App\DTO\ProcListDTO;
 use App\DTO\ProcListRespDTO;
-use App\Entity\Chambers;
 use App\Entity\Patients;
 use App\Entity\ProcedureList;
 use App\Entity\Procedures;
@@ -52,15 +50,6 @@ class AdaptersService
 
         return $procListDTO;
     }
-
-    public function convertChamberDTOtoChamber(ChamberDTO $chamberDTO): Chambers
-    {
-        $chamber = new Chambers();
-        $chamber->setNumber($chamberDTO->number);
-
-        return $chamber;
-    }
-
     public function procListDtoToProcList(ProcListDTO $procList, $id): ProcedureList
     {
         $procedure = $this->proceduresRepository->find($procList->getProcedureId());

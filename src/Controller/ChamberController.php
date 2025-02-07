@@ -190,7 +190,7 @@ final class ChamberController extends AbstractController
             ]
         ),
     )]
-    public function updateProcedures(Request $request,int $id): JsonResponse
+    public function updateProcedures(Request $request, int $id): JsonResponse
     {
         $response = $this->chambersService->addProcedure($id,$request->getContent());
         return $this->json($response,$response['code']);

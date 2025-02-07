@@ -4,7 +4,6 @@ namespace App\Controller;
 
 use App\DTO\ResponseDTO;
 use App\Services\PatientsServices;
-use Doctrine\ORM\EntityManagerInterface;
 use OpenApi\Attributes as OA;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -249,7 +248,7 @@ final class PatientController extends AbstractController
             ]
         ),
     )]
-    public function delete(EntityManagerInterface $em,int|null $id): JsonResponse
+    public function delete(int|null $id): JsonResponse
     {
         $response = $this->patientsServices->remove($id);
         return $this->json($response,$response['code']);
