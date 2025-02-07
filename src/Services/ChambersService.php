@@ -114,7 +114,7 @@ class ChambersService
     {
         $data = $this->jsonResponseHelpers->checkData($data,'App\Entity\Chambers');
         if($data === null){
-            return $this->jsonResponseHelpers->generate('Error',400,'check your request body');
+            return $this->jsonResponseHelpers->generate('Error',402,'check your request body');
         }
         $chamber = $this->chambersRepository->findBy([
             'number' =>$data->getNumber()

@@ -127,7 +127,6 @@ final class ChamberController extends AbstractController
         return $this->json($response,$response['code']);
     }
     #[Route('/{id}/procedures', name: 'update_chambers_procedures', methods: ["POST"])]
-
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -197,6 +196,69 @@ final class ChamberController extends AbstractController
         return $this->json($response,$response['code']);
     }
     #[Route(name: 'store_chambers', methods: ["POST"])]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            type: "array",
+            items: new OA\Items(
+                type: 'object',
+            ),
+            example:
+                [
+                    'number' => 1,
+                ],
+
+        ))]
+    #[OA\Response(
+        response: 402,
+        description: 'Error',
+        content: new OA\JsonContent(
+            ref: new Model(type:ResponseDTO::class),
+            type: "object",
+            example: [
+                "type"=>"Error",
+                "code"=>402,
+                "message" => "Check request body",
+
+            ]
+        ),
+    )]
+    #[OA\Response(
+        response: 400,
+        description: 'Error',
+        content: new OA\JsonContent(
+            ref: new Model(type:ResponseDTO::class),
+            type: "object",
+            example: [
+                "type"=>"Error",
+                "code"=>400,
+                "message" => "Chamber is exists",
+                "data"=>[
+                    'id' => 23,
+                    "number"=>1
+                ]
+
+            ]
+        ),
+    )]
+    #[OA\Response(
+        response: 200,
+        description: 'Create',
+        content: new OA\JsonContent(
+            ref: new Model(type:ResponseDTO::class),
+            type: "object",
+            example: [
+                "type"=>"Create",
+                "code"=>200,
+                "message" => "Chamber has been create",
+                "data"=>[
+                    'id' => 24,
+                    "number"=>11
+                ]
+
+            ]
+        ),
+    )]
     public function store(Request $request): JsonResponse
     {
         $response = $this->chambersService->create($request->getContent());

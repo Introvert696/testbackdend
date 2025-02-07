@@ -89,7 +89,7 @@ class PatientsServices
         $this->em->remove($this->responseHelper->first($patient));
         $this->em->flush();
 
-        return $this->responseHelper->generate('Ok',204,"Patient has been delete");
+        return $this->responseHelper->generate('Ok',200,"Patient has been delete");
     }
     public function about(int $id): array
     {
