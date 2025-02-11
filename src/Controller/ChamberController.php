@@ -43,6 +43,7 @@ final class ChamberController extends AbstractController
                 ]
         )
     )]
+    #[OA\Tag(name:"Chamber")]
     public function index(): JsonResponse
     {
         $response = $this->chambersService->all();
@@ -67,6 +68,7 @@ final class ChamberController extends AbstractController
             ]
         ),
     )]
+    #[OA\Tag(name:"Chamber")]
     public function show(int $id): JsonResponse
     {
         $response = $this->chambersService->get($id);
@@ -107,6 +109,7 @@ final class ChamberController extends AbstractController
             ]
         ),
     )]
+    #[OA\Tag(name:"Chamber")]
     #[OA\Response(
         response: 404,
         description: 'Not found',
@@ -190,6 +193,7 @@ final class ChamberController extends AbstractController
             ]
         ),
     )]
+    #[OA\Tag(name:"Chamber")]
     public function updateProcedures(Request $request, int $id): JsonResponse
     {
         $response = $this->chambersService->addProcedure($id,$request->getContent());
@@ -259,6 +263,7 @@ final class ChamberController extends AbstractController
             ]
         ),
     )]
+    #[OA\Tag(name:"Chamber")]
     public function store(Request $request): JsonResponse
     {
         $response = $this->chambersService->create($request->getContent());
@@ -306,6 +311,7 @@ final class ChamberController extends AbstractController
             ]
         ),
     )]
+    #[OA\Tag(name:"Chamber")]
     public function update(Request $request,int|null $id): JsonResponse
     {
         $response = $this->chambersService->update($id,$request->getContent());
@@ -339,6 +345,7 @@ final class ChamberController extends AbstractController
             ]
         ),
     )]
+    #[OA\Tag(name:"Chamber")]
     public function delete(int|null $id): JsonResponse
     {
         $response = $this->chambersService->delete($id);

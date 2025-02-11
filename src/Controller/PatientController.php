@@ -45,7 +45,7 @@ final class PatientController extends AbstractController
             ]
         ),
     )]
-
+    #[OA\Tag(name:"Patient")]
     public function index(): JsonResponse
     {
         return $this->json($this->patientsServices->all());
@@ -89,6 +89,7 @@ final class PatientController extends AbstractController
             ]
         ),
     )]
+    #[OA\Tag(name:"Patient")]
     public function get(int|null $id): JsonResponse
     {
         $response = $this->patientsServices->about($id);
@@ -152,7 +153,7 @@ final class PatientController extends AbstractController
             ]
         ),
     )]
-
+    #[OA\Tag(name:"Patient")]
     public function store(Request $request): JsonResponse
     {
         $response = $this->patientsServices->createOrFind($request->getContent());
@@ -216,6 +217,7 @@ final class PatientController extends AbstractController
             ]
         ),
     )]
+    #[OA\Tag(name:"Patient")]
     public function update(Request $request,int|null $id): JsonResponse
     {
         $response = $this->patientsServices->update($id,$request->getContent());
@@ -248,6 +250,7 @@ final class PatientController extends AbstractController
             ]
         ),
     )]
+    #[OA\Tag(name:"Patient")]
     public function delete(int|null $id): JsonResponse
     {
         $response = $this->patientsServices->remove($id);

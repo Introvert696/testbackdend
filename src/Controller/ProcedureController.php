@@ -40,6 +40,7 @@ final class ProcedureController extends AbstractController
             ]
         ),
     )]
+    #[OA\Tag(name:"Procedure")]
     public function index(ProceduresService $proceduresService): JsonResponse
     {
         return $this->json($proceduresService->all());
@@ -99,6 +100,7 @@ final class ProcedureController extends AbstractController
             ]
         ),
     )]
+    #[OA\Tag(name:"Procedure")]
     public function show(ProceduresService $proceduresService,$id): JsonResponse
     {
         return $this->json($proceduresService->about($id));
@@ -166,6 +168,7 @@ final class ProcedureController extends AbstractController
             ]
         ),
     )]
+    #[OA\Tag(name:"Procedure")]
     public function store(Request $request,ProceduresService $proceduresService): JsonResponse
     {
         $response = $proceduresService->store($request->getContent());
@@ -218,6 +221,7 @@ final class ProcedureController extends AbstractController
             ]
         ),
     )]
+    #[OA\Tag(name:"Procedure")]
     public function update(Request $request,ProceduresService $proceduresService,$id): JsonResponse
     {
         $response = $proceduresService->update($id,$request->getContent());
@@ -252,6 +256,7 @@ final class ProcedureController extends AbstractController
             ]
         ),
     )]
+    #[OA\Tag(name:"Procedure")]
     public function delete(ProceduresService $proceduresService,$id): JsonResponse
     {
         return $this->json($proceduresService->delete($id));
