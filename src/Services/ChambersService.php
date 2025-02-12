@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\DTO\ChamberResponseDTO;
 use App\DTO\ProcListDTO;
+use App\Entity\Chambers;
 use App\Entity\ProcedureList;
 use App\Repository\ChambersRepository;
 use App\Repository\ProcedureListRepository;
@@ -65,18 +66,19 @@ class ChambersService
         $procedures = [];
         $chamber = $this->chambersRepository->find($id);
         $data = $this->jsonResponseHelpers->checkData($data,'App\DTO\ProcListDTO[]');
+
         if(!$data)
         {
-            return $this->jsonResponseHelpers->generate('Error',402,'Check fields');
+            return $this->jsonResponseHelpers->generate('Error',402,'Check fields (data)');
         }
         foreach ($data as $d){
-            $d= $this->validateProcListDTO($d);
-           if($d===null){
-               return $this->jsonResponseHelpers->generate('Error',402,'Check fields');
+           if(!($this->validateProcListDTO($d))){
+               return $this->jsonResponseHelpers->generate('Error',402,'Check fields (validator)');
            }
+
         }
-        if(!$chamber or !is_array($data)){
-            return $this->jsonResponseHelpers->generate('Error',402,'Check fields');
+        if(!$chamber){
+            return $this->jsonResponseHelpers->generate('Error',404,'Chamber not found');
         }
         $procedureLists = $this->procedureListRepository->findBy([
                 'source_type' => 'chambers',
@@ -107,6 +109,10 @@ class ChambersService
     {
         $data = $this->jsonResponseHelpers->checkData($data,'App\Entity\Chambers');
         if($data === null){
+            return $this->jsonResponseHelpers->generate('Error',402,'check your request body');
+        }
+        $data = $this->validateRequestData($data);
+        if(!$data){
             return $this->jsonResponseHelpers->generate('Error',402,'check your request body');
         }
         $chamber = $this->chambersRepository->findBy([
@@ -171,15 +177,25 @@ class ChambersService
         return $this->jsonResponseHelpers->generate('Delete',202,'chamber '.$id.' has been delete');
     }
 
-    public function validateProcListDTO(ProcListDTO $data): array|object|null
+    public function validateProcListDTO(ProcListDTO $data): ProcListDTO|null
     {
-        if($data->procedure_id and $data->queue and $data->status){
+        if(($data->procedure_id!==null) and ($data->queue!==null) and ($data->status!==null)){
             return $data;
         }
         else{
             return null;
         }
     }
+    // выкинуть в другой класс, башка уже не варит но кофк прикольна
+
+    public function validateRequestData(object $data): ?Chambers
+    {
+        if($data->getNumber()!==null)
+            return $data;
+
+        return null;
+    }
+    // это переделать
     public function createChamberProcedureDTO(ProcedureList $pl): ChamberProcedureDTO
     {
         $responseObject= new ChamberProcedureDTO();

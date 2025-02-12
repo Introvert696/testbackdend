@@ -60,7 +60,7 @@ class PatientsServices
         }
         // совместить
         if (!$chamber) {
-            return $this->responseHelper->generate('Not found',404,'Chamber Not Found');
+            return $this->responseHelper->generate('Not found',422,'Chamber not found');
         }
         $chamberPatients = $patient->getChambersPatients();
         if ($chamberPatients) {

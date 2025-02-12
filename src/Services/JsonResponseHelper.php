@@ -11,7 +11,7 @@ class JsonResponseHelper
     public function __construct(
         private readonly SerializerInterface $serializer,
     ){}
-    public function generate(string $type,int $statusCode,string $message,array|object $data = null): array{
+    public function generate(string $type,int $statusCode,string $message,array|object|null $data = null): array{
         $response['type'] = $type;
         $response['code'] = $statusCode;
         $response['message'] = $message;

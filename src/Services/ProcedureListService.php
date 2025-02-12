@@ -13,7 +13,7 @@ class ProcedureListService
     public function validate(ProcListDTO $pc): ProcListDTO|null
     {
         $procedure = $this->proceduresRepository->find($pc->getProcedureId());
-        if(($pc->getProcedureId()!=null)and($pc->getQueue()!=null)and($pc->getStatus()!=null)and($procedure!==null))
+        if(($pc->getProcedureId()!==null)and($pc->getQueue()!==null)and($pc->getStatus()!==null)and($procedure!==null))
             return $pc;
         else
             return null;

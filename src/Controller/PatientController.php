@@ -200,6 +200,19 @@ final class PatientController extends AbstractController
         ),
     )]
     #[OA\Response(
+        response: 422,
+        description: 'Fields not filled',
+        content: new OA\JsonContent(
+            ref: new Model(type:ResponseDTO::class),
+            type: "object",
+            example: [
+                "type"=>"Error",
+                "code"=>422,
+                "message" => "Chamber not found",
+            ]
+        ),
+    )]
+    #[OA\Response(
         response: 200,
         description: 'Patient has been updated',
         content: new OA\JsonContent(
