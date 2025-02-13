@@ -75,7 +75,7 @@ class UpdateProcedureApiTest extends WebTestCase
     {
         $client = $this->client;
        // body с ошибкой
-        $data = `"[{"procedure_id":5,"queue":3,"status":tocedure_id":6,"queue":2,"status":false}]"`;
+        $data = "[{'procedure_id':5,'queue':3,'status':'tocedure_id':6,'queue':2,'status':false}]";
 
         $client->request('POST', 'http://127.0.0.1:8000/api/chambers/1/procedures', server: [
             "CONTENT_TYPE"=>"application/json"

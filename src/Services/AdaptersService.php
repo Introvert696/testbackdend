@@ -23,7 +23,10 @@ class AdaptersService
     public function patientToPatientResponseDTO(Patients $patients, $procList = null): PatientResponseDTO
     {
         $patientResponse = new PatientResponseDTO();
-        $patientResponse->setId($patients->getId());
+        if($patients->getId())
+        {
+            $patientResponse->setId($patients->getId());
+        }
         $patientResponse->setName($patients->getName());
         $patientResponse->setCardNumber($patients->getCardNumber());
         if ($patients->getChambersPatients()) {
@@ -65,7 +68,9 @@ class AdaptersService
     public function procedureToProcedureResponseDTO(Procedures $procedures): ProcedureResponseDTO
     {
         $newProcResponse = new ProcedureResponseDTO();
-        $newProcResponse->setId($procedures->getId());
+        if($procedures->getId()){
+            $newProcResponse->setId($procedures->getId());
+        }
         $newProcResponse->setTitle($procedures->getTitle());
         $newProcResponse->setDescription($procedures->getDescription());
 

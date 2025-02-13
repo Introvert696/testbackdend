@@ -110,7 +110,7 @@ class ChambersService
         if($data === null){
             return $this->jsonResponseHelpers->generate('Error',400,'check your request body');
         }
-        $data = $this->validateRequestData($data);
+        $data = $this->validateChambersRequestData($data);
         if(!$data){
             return $this->jsonResponseHelpers->generate('Error',400,'check your request body');
         }
@@ -187,13 +187,13 @@ class ChambersService
     }
     // выкинуть в другой класс, башка уже не варит но кофк прикольна
 
-    public function validateRequestData(object $data): object|null
+    public function validateChambersRequestData(object $data): object|null
     {
         if($data->getNumber()!==null)
             return $data;
         return null;
     }
-    // это переделать
+    // это переделать в репозиторий
     public function createChamberProcedureDTO(ProcedureList $pl): ChamberProcedureDTO
     {
         $responseObject= new ChamberProcedureDTO();

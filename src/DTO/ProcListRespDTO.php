@@ -6,8 +6,8 @@ class ProcListRespDTO
 {
     public int $queue;
     public bool $status;
-    public int $sourceId;
-    public string $sourceType;
+    public int $source_id;
+    public string $source_type;
 
     public function getQueue(): int
     {
@@ -31,21 +31,21 @@ class ProcListRespDTO
     }
     public function getSourceId(): int
     {
-        return $this->sourceId;
+        return $this->source_id;
     }
-    public function setSourceId(int $sourceId): static
+    public function setSourceId(int $source_id): static
     {
-        $this->sourceId = $sourceId;
+        $this->source_id = $source_id;
 
         return $this;
     }
     public function getSourceType(): string
     {
-        return $this->sourceType;
+        return $this->source_type;
     }
     public function setSourceType(string $sourceType): static
     {
-        $this->sourceType = $sourceType;
+        $this->source_type = $sourceType;
 
         return $this;
     }
