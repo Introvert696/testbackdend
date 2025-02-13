@@ -103,7 +103,8 @@ final class ProcedureController extends AbstractController
     #[OA\Tag(name:"Procedure")]
     public function show(ProceduresService $proceduresService,$id): JsonResponse
     {
-        return $this->json($proceduresService->about($id));
+        $response = $proceduresService->about($id);
+        return $this->json($response,$response['code']);
     }
     #[Route( name: 'store_procedure',methods: ['POST'])]
     #[OA\RequestBody(
@@ -259,6 +260,7 @@ final class ProcedureController extends AbstractController
     #[OA\Tag(name:"Procedure")]
     public function delete(ProceduresService $proceduresService,$id): JsonResponse
     {
-        return $this->json($proceduresService->delete($id));
+        $response = $proceduresService->delete($id);
+        return $this->json($response,$response['code']);
     }
 }

@@ -1,24 +1,25 @@
 <?php
 
-namespace App\Tests\API\Chamber;
+namespace App\Tests\API\Patient;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-class UpdateApiTest extends WebTestCase
+class StoreApiTest extends WebTestCase
 {
     private $client = null;
     protected function setUp(): void
     {
         $this->client = static::createClient();
     }
-    public function testUpdateChamber():void
+    public function testStoreChamber():void
     {
         $client = $this->client;
         $data = [
-            "number"=>335
+            "name"=>"Елисеев Михаил Васильевич",
+            "card_number" => 4324
         ];
         $data = json_encode($data);
-        $client->request('PATCH', 'http://127.0.0.1:8000/api/chambers/1', server: [
+        $client->request('POST', 'http://127.0.0.1:8000/api/patients', server: [
             "CONTENT_TYPE"=>"application/json"
         ], content: $data);
 
@@ -35,16 +36,11 @@ class UpdateApiTest extends WebTestCase
         $client = $this->client;
         $data = [];
         $data = json_encode($data);
-        $client->request('PATCH', 'http://127.0.0.1:8000/api/chambers/1', server: [
+        $client->request('POST', 'http://127.0.0.1:8000/api/patients', server: [
             "CONTENT_TYPE"=>"application/json"
         ], content: $data);
 
-        if($client->getResponse()->getStatusCode() === 404){
-            $this->assertResponseStatusCodeSame(404);
-        }
-        else if($client->getResponse()->getStatusCode()===400){
-            $this->assertResponseStatusCodeSame(400);
-        }
+        $this->assertResponseStatusCodeSame(400);
         $this->assertJson($client->getResponse()->getContent());
     }
 }

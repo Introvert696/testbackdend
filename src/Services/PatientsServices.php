@@ -29,10 +29,10 @@ class PatientsServices
     {
         $data = $this->jsonResponseHelper->checkData($data,'App\Entity\Patients');
         if(!$data){
-            return $this->responseHelper->generate('Error',502,'Check fields');
+            return $this->responseHelper->generate('Error',400,'Check fields');
         }
         if($this->validatePatient($data)===null){
-            return $this->responseHelper->generate('Error',502,'Check all fields');
+            return $this->responseHelper->generate('Error',400,'Check all fields');
         }
         $result = $this->patientsRepository->findBy(['card_number'=>$data->getCardNumber()]);
         if($result){

@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\DTO\ChamberResponseDTO;
 use App\DTO\ProcListDTO;
-use App\Entity\Chambers;
 use App\Entity\ProcedureList;
 use App\Repository\ChambersRepository;
 use App\Repository\ProcedureListRepository;
@@ -69,7 +68,7 @@ class ChambersService
 
         if(!$data)
         {
-            return $this->jsonResponseHelpers->generate('Error',402,'Check fields (data)');
+            return $this->jsonResponseHelpers->generate('Error',422,'Check fields (data)');
         }
         foreach ($data as $d){
            if(!($this->validateProcListDTO($d))){
@@ -109,11 +108,11 @@ class ChambersService
     {
         $data = $this->jsonResponseHelpers->checkData($data,'App\Entity\Chambers');
         if($data === null){
-            return $this->jsonResponseHelpers->generate('Error',402,'check your request body');
+            return $this->jsonResponseHelpers->generate('Error',400,'check your request body');
         }
         $data = $this->validateRequestData($data);
         if(!$data){
-            return $this->jsonResponseHelpers->generate('Error',402,'check your request body');
+            return $this->jsonResponseHelpers->generate('Error',400,'check your request body');
         }
         $chamber = $this->chambersRepository->findBy([
             'number' =>$data->getNumber()
@@ -188,11 +187,10 @@ class ChambersService
     }
     // выкинуть в другой класс, башка уже не варит но кофк прикольна
 
-    public function validateRequestData(object $data): ?Chambers
+    public function validateRequestData(object $data): object|null
     {
         if($data->getNumber()!==null)
             return $data;
-
         return null;
     }
     // это переделать

@@ -68,7 +68,7 @@ class UpdateProcedureApiTest extends WebTestCase
             "CONTENT_TYPE"=>"application/json"
         ], content: $data);
 
-        $this->assertResponseStatusCodeSame(402);
+        $this->assertResponseStatusCodeSame(422);
         $this->assertJson($client->getResponse()->getContent());
     }
     public function testNotValidBody(): void
