@@ -16,10 +16,8 @@ services:
   php:
     build: .
     container_name: php
-    volumes:
-      - .:/var/www/symfony
     environment:
-      SYMFONY_ENV: dev
+      SYMFONY_ENV: prod
     entrypoint: ['/var/www/symfony/entrypoint.sh']
     depends_on:
       db:

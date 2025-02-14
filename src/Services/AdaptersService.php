@@ -14,8 +14,11 @@ use App\Repository\ProceduresRepository;
 
 class AdaptersService
 {
+
+
     public function __construct(
-        private readonly ProceduresRepository $proceduresRepository
+        private readonly ProceduresRepository $proceduresRepository,
+        private readonly ValidateService $validator
     )
     {
     }
@@ -42,8 +45,12 @@ class AdaptersService
         return $patientResponse;
     }
 
-    public function procedureListToChamberProcedureDto(ProcedureList $procList): ChamberProcedureDTO
+    public function procedureListToChamberProcedureDto(ProcedureList $procList): ChamberProcedureDTO|null
     {
+        $pl = $this->validator->procedureList($procList);
+        if($pl===null){
+            return null;
+        }
         $procListDTO = new ChamberProcedureDTO();
         $procListDTO->setId($procList->getProcedures()->getId());
         $procListDTO->setStatus($procList->getStatus());
@@ -86,5 +93,6 @@ class AdaptersService
 
         return $procListResp;
     }
+
 }
 

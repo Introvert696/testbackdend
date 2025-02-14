@@ -4,16 +4,14 @@ namespace App\Tests\Services\ChambersService;
 
 use App\Tests\Services\BaseService;
 
-class GetTest extends BaseService
+class DeleteTest extends BaseService
 {
-    public function testGet(): void
+    public function testMain(): void
     {
-        // сначала создаем а потом получаем id
-        $chamber = $this->chamberService->get(1);
+        $chamber = $this->chamberService->delete(99);
 
         $this->assertArrayHasKey('type',$chamber);
         $this->assertArrayHasKey('code',$chamber);
         $this->assertArrayHasKey('message',$chamber);
-        $this->assertArrayHasKey('data',$chamber);
     }
 }

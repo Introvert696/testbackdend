@@ -2,19 +2,10 @@
 namespace App\Tests\Services\AdaptersService;
 
 use App\Entity\ProcedureList;
-use App\Services\AdaptersService;
-use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use App\Tests\Services\BaseService;
 
-class ProcListToProcListRespDTOTest extends KernelTestCase
+class ProcListToProcListRespDTOTest extends BaseService
 {
-    private $container;
-    private $adapterService;
-    public function setUp(): void
-    {
-        self::bootKernel();
-        $this->container = static::getContainer();
-        $this->adapterService = $this->container->get(AdaptersService::class);
-    }
     public function testMain(): void
     {
         $pl = new ProcedureList();

@@ -4,19 +4,10 @@ namespace App\Tests\Services\ChambersPatientsService;
 
 use App\Entity\Chambers;
 use App\Entity\Patients;
-use App\Services\ChambersPatientsService;
-use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use App\Tests\Services\BaseService;
 
-class CreateTest extends KernelTestCase
+class CreateTest extends BaseService
 {
-    private $container;
-    private $chamberPatients;
-    public function setUp(): void
-    {
-        self::bootKernel();
-        $this->container = static::getContainer();
-        $this->chamberPatients = $this->container->get(ChambersPatientsService::class);
-    }
 
     public function testMain(): void
     {

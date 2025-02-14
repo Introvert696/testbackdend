@@ -3,11 +3,8 @@
 namespace App\Services;
 
 use App\DTO\ChamberResponseDTO;
-use App\DTO\ProcListDTO;
-use App\Entity\ProcedureList;
 use App\Repository\ChambersRepository;
 use App\Repository\ProcedureListRepository;
-use App\DTO\ChamberProcedureDTO;
 use Doctrine\ORM\EntityManagerInterface;
 
 class ChambersService
@@ -17,8 +14,8 @@ class ChambersService
         private readonly JsonResponseHelper $jsonResponseHelpers,
         private readonly ChambersRepository $chambersRepository,
         private readonly ProcedureListRepository $procedureListRepository,
-        private readonly ProcedureListService $procedureListService,
-        private readonly AdaptersService $adaptersService
+        private readonly AdaptersService $adaptersService,
+        private readonly ValidateService $validator,
     )
     {}
     public function all(): array
@@ -51,7 +48,7 @@ class ChambersService
         $procList = $this->procedureListRepository->findBy(['source_type'=>'chambers','source_id'=>$id]);
         $data = [];
         foreach ($procList as $pl){
-            $data[] = $this->createChamberProcedureDTO($pl);
+            $data[] = $this->adaptersService->procedureListToChamberProcedureDTO($pl);
         }
         $response = $this->jsonResponseHelpers->generate('Ok',200,'Procedures, chamber - '.$id ,$data);
         if(!$data){
@@ -71,7 +68,7 @@ class ChambersService
             return $this->jsonResponseHelpers->generate('Error',422,'Check fields (data)');
         }
         foreach ($data as $d){
-           if(!($this->validateProcListDTO($d))){
+           if(!($this->validator->procListDTO($d))){
                return $this->jsonResponseHelpers->generate('Error',402,'Check fields (validator)');
            }
 
@@ -92,7 +89,7 @@ class ChambersService
             if($d === null){
                 return $this->jsonResponseHelpers->generate('Not Found',404,'Procedure - not found');
             }
-            $proc =$this->procedureListService->validate($d);
+            $proc =$this->validator->procedureListWithProcedure($d);
             if(!$proc){
                 return $this->jsonResponseHelpers->generate('Not Valid',502,'Procedure not valid');
             }
@@ -110,7 +107,7 @@ class ChambersService
         if($data === null){
             return $this->jsonResponseHelpers->generate('Error',400,'check your request body');
         }
-        $data = $this->validateChambersRequestData($data);
+        $data = $this->validator->chambersRequestData($data);
         if(!$data){
             return $this->jsonResponseHelpers->generate('Error',400,'check your request body');
         }
@@ -174,36 +171,6 @@ class ChambersService
         $this->em->remove($chamber);
         $this->em->flush();
         return $this->jsonResponseHelpers->generate('Delete',202,'chamber '.$id.' has been delete');
-    }
-
-    public function validateProcListDTO(ProcListDTO $data): ProcListDTO|null
-    {
-        if(($data->procedure_id!==null) and ($data->queue!==null) and ($data->status!==null)){
-            return $data;
-        }
-        else{
-            return null;
-        }
-    }
-    // выкинуть в другой класс, башка уже не варит но кофк прикольна
-
-    public function validateChambersRequestData(object $data): object|null
-    {
-        if($data->getNumber()!==null)
-            return $data;
-        return null;
-    }
-    // это переделать в репозиторий
-    public function createChamberProcedureDTO(ProcedureList $pl): ChamberProcedureDTO
-    {
-        $responseObject= new ChamberProcedureDTO();
-        $responseObject->setId($pl->getProcedures()->getId());
-        $responseObject->setQueue($pl->getQueue());
-        $responseObject->setTitle($pl->getProcedures()->getTitle());
-        $responseObject->setDesc($pl->getProcedures()->getDescription());
-        $responseObject->setStatus($pl->getStatus());
-
-        return $responseObject;
     }
 
 }

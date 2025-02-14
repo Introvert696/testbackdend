@@ -2,7 +2,7 @@ nelmio_api_doc:
     documentation:
         info:
             title: Telemedicine
-            description: Test task app
+            description: Тестовое задание на Backend-разработчика
             version: 1.0.0
     areas: # to filter documented areas
         path_patterns:

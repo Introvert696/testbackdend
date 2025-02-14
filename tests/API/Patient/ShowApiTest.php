@@ -15,7 +15,7 @@ class ShowApiTest extends WebTestCase
     public function testShowPatientApi(): void
     {
         $client = $this->client;
-        $client->request('GET','http://127.0.0.1:8000/api/patients/1');
+        $client->request('GET','http://127.0.0.1:8000/api/patients/5');
         $this->assertResponseIsSuccessful();
 
         $this->assertJson($client->getResponse()->getContent());

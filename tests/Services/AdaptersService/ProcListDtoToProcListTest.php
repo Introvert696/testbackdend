@@ -3,19 +3,10 @@
 namespace App\Tests\Services\AdaptersService;
 
 use App\DTO\ProcListDTO;
-use App\Services\AdaptersService;
-use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use App\Tests\Services\BaseService;
 
-class ProcListDtoToProcListTest extends KernelTestCase
+class ProcListDtoToProcListTest extends BaseService
 {
-    private $container;
-    private $adapterService;
-    public function setUp(): void
-    {
-        self::bootKernel();
-        $this->container = static::getContainer();
-        $this->adapterService = $this->container->get(AdaptersService::class);
-    }
     public function testMain(): void
     {
         $procListDto = new ProcListDTO();

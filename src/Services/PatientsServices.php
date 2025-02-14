@@ -18,6 +18,7 @@ class PatientsServices
         private readonly ChambersPatientsService $chambersPatientsService,
         private readonly AdaptersService $adaptersService,
         private readonly JsonResponseHelper $jsonResponseHelper,
+        private readonly ValidateService $validator,
     )
     {
     }
@@ -31,7 +32,7 @@ class PatientsServices
         if(!$data){
             return $this->responseHelper->generate('Error',400,'Check fields');
         }
-        if($this->validatePatient($data)===null){
+        if($this->validator->patients($data)===null){
             return $this->responseHelper->generate('Error',400,'Check all fields');
         }
         $result = $this->patientsRepository->findBy(['card_number'=>$data->getCardNumber()]);
@@ -102,15 +103,7 @@ class PatientsServices
 
         return $this->responseHelper->generate('Ok',200,"Patient info",$patient);
     }
-    public function validatePatient(object $data): null|object
-    {
-        if(($data->getName()!==null) and ($data->getCardNumber()!== null)){
-            return $data;
-        }
-        else{
-            return null;
-        }
-    }
+
 
 
 }

@@ -2,19 +2,10 @@
 namespace App\Tests\Services\AdaptersService;
 
 use App\Entity\Patients;
-use App\Services\AdaptersService;
-use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use App\Tests\Services\BaseService;
 
-class PatientToPatientResponseDTOTest extends KernelTestCase
+class PatientToPatientResponseDTOTest extends BaseService
 {
-    private $container;
-    private $adapterService;
-    public function setUp(): void
-    {
-        self::bootKernel();
-        $this->container = static::getContainer();
-        $this->adapterService = $this->container->get(AdaptersService::class);
-    }
     public function testMain(): void
     {
         $patient = new Patients();

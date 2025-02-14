@@ -20,8 +20,11 @@ class JsonResponseHelper
         }
         return $response;
     }
-    public function first(array $data): object
+    public function first(array $data): object|null
     {
+        if(empty($data)){
+            return null;
+        }
         return $data[0];
     }
     public function checkData($data,$class): object|array|null

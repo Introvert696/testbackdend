@@ -2,19 +2,10 @@
 
 namespace App\Tests\Services\ChambersService;
 
-use App\Services\ChambersService;
-use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use App\Tests\Services\BaseService;
 
-class AddProcedureTest extends KernelTestCase
+class AddProcedureTest extends BaseService
 {
-    private $container;
-    private $chamberService;
-    public function setUp(): void
-    {
-        self::bootKernel();
-        $this->container = static::getContainer();
-        $this->chamberService = $this->container->get(ChambersService::class);
-    }
 
     public function testAddProcedure(): void
     {
