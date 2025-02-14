@@ -1,4 +1,5 @@
 version: "3.8"
+name: "telemedicine"
 
 services:
   webserver:
@@ -11,6 +12,7 @@ services:
     depends_on:
       - php
 
+
   php:
     build: .
     container_name: php
@@ -18,6 +20,15 @@ services:
       - .:/var/www/symfony
     environment:
       SYMFONY_ENV: dev
+    entrypoint: ['/var/www/symfony/entrypoint.sh']
+    depends_on:
+      db:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 3G
 
   db:
     image: postgres:14
@@ -31,5 +42,10 @@ services:
       POSTGRES_PASSWORD: symfony_password
     ports:
       - "5433:5432"
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
 volumes:
   db:
