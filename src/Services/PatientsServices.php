@@ -26,6 +26,7 @@ class PatientsServices
     {
         return $this->responseHelper->generate('Ok',200,'return all patient',$this->patientsRepository->findAll());
     }
+    // rename this method
     public function createOrFind($data):array
     {
         $data = $this->jsonResponseHelper->checkData($data,'App\Entity\Patients');
@@ -71,14 +72,14 @@ class PatientsServices
             $this->em->persist($chamberPatients);
         }
         $this->em->flush();
-
-        return $this->responseHelper->generate('Ok',200,'Patient has been updated',$this->adaptersService->patientToPatientResponseDTO($patient) );
+        return $this->responseHelper->generate('Updated',200,'Patient has been updated',$this->adaptersService->patientToPatientResponseDTO($patient) );
     }
-    public function remove($id): array
+    public function delete($id): array
     {
         $patient = $this->patientsRepository->getMore($id);
+
         if(!$patient){
-            return $this->responseHelper->generate('Not Found',404,"Patient not found");
+            return $this->responseHelper->generate('Not found',404,"Patient not found");
         }
         $procedureList = $this->procedureListRepository->findBy([
             'source_type' => 'patients',

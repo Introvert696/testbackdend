@@ -17,8 +17,8 @@ class ChambersPatients
     #[ORM\ManyToOne( inversedBy: 'chambersPatients')]
     private ?Chambers $chambers = null;
 
-    #[ORM\OneToOne(inversedBy: 'chambersPatients', cascade: ['persist', 'remove'])]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\OneToOne(targetEntity: Patients::class, inversedBy: 'chambersPatients')]
+    #[ORM\JoinColumn(name:'patients_id',referencedColumnName: 'id',nullable: false,onDelete: 'CASCADE')]
     #[Ignore]
     private ?Patients $patients = null;
 

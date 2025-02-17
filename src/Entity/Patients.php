@@ -26,14 +26,8 @@ class Patients
     private ?int $card_number = null;
 
     #[Ignore]
-    #[ORM\OneToOne(mappedBy: 'patients', cascade: ['persist', 'remove'])]
+    #[ORM\OneToOne(mappedBy: 'patients', cascade: ['persist','remove'], orphanRemoval: true)]
     private ?ChambersPatients $chambersPatients = null;
-
-
-    public function __construct()
-    {
-        $this->procedureLists = new ArrayCollection();
-    }
 
     public function getId(): ?int
     {

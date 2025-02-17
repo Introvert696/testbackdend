@@ -2,22 +2,62 @@
 
 namespace App\Tests\Services\ChambersService;
 
+use App\Entity\Chambers;
 use App\Tests\Services\BaseService;
 
 class UpdateTest extends BaseService
 {
+    public function testCurrent() : void
+    {
+        $chamber = new Chambers();
+        $chamber->setNumber(38);
+        $this->em->persist($chamber);
+        $this->em->flush();
+        $data = [
+            "number"=>543234
+        ];
+        $response = $this->chamberService->update($chamber->getId(),json_encode($data));
+        $this->assertArrayHasKey('type',$response);
+        $this->assertArrayHasKey('code',$response);
+        $this->assertArrayHasKey('message',$response);
+        $this->assertSame($response['type'],"Updated");
+        $this->assertSame($response['code'],200);
+        $this->em->remove($chamber);
+        $this->em->flush();
+
+    }
     public function testConflict() : void
     {
-        $id = 1;
-//        conflict number
+        $chamber = new Chambers();
+        $chamber->setNumber(67);
+        $this->em->persist($chamber);
+        $this->em->flush();
         $data = [
-            "number"=>313
+            "number"=>67
         ];
-        $response = $this->chamberService->update($id,json_encode($data));
+        $response = $this->chamberService->update($chamber->getId(),json_encode($data));
         $this->assertArrayHasKey('type',$response);
         $this->assertArrayHasKey('code',$response);
         $this->assertArrayHasKey('message',$response);
         $this->assertSame($response['type'],"Conflict");
+        $this->assertSame($response['code'],409);
+        $this->em->remove($chamber);
+        $this->em->flush();
+
+    }
+    public function testNotFound() : void
+    {
+
+        $data = [
+            "number"=>67
+        ];
+        $response = $this->chamberService->update(0,json_encode($data));
+        $this->assertArrayHasKey('type',$response);
+        $this->assertArrayHasKey('code',$response);
+        $this->assertArrayHasKey('message',$response);
+        $this->assertSame($response['type'],"Not found");
+        $this->assertSame($response['code'],404);
+
     }
 
 }

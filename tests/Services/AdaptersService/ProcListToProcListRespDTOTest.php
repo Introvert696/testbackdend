@@ -6,13 +6,9 @@ use App\Tests\Services\BaseService;
 
 class ProcListToProcListRespDTOTest extends BaseService
 {
-    public function testMain(): void
+    public function testValid(): void
     {
-        $pl = new ProcedureList();
-        $pl->setSourceType('chamber');
-        $pl->setSourceId(2);
-        $pl->setQueue(1);
-        $pl->setStatus(false);
+        $pl = $this->procedureListRepository->find(1);
 
         $procRespDTO = $this->adapterService->procListToProcListRespDTO($pl);
 
@@ -20,5 +16,11 @@ class ProcListToProcListRespDTOTest extends BaseService
         $this->assertObjectHasProperty('source_id',$procRespDTO);
         $this->assertObjectHasProperty('source_type',$procRespDTO);
         $this->assertObjectHasProperty('status',$procRespDTO);
+    }
+    public function testNotValid(): void
+    {
+        $pl = new ProcedureList();
+        $procRespDTO = $this->adapterService->procListToProcListRespDTO($pl);
+        $this->assertNull($procRespDTO);
     }
 }

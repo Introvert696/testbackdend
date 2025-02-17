@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Entity\Procedures;
 use App\Repository\ProcedureListRepository;
 use App\Repository\ProceduresRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -14,7 +13,8 @@ class ProceduresService
         private readonly EntityManagerInterface $em,
         private readonly ProceduresRepository $proceduresRepository,
         private readonly ProcedureListRepository $procedureListRepository,
-        private readonly AdaptersService $adaptersService
+        private readonly AdaptersService $adaptersService,
+        private readonly ValidateService $validateService,
     )
     {}
     public function all(): array
@@ -45,7 +45,7 @@ class ProceduresService
     // переделать
     public function store($data):array{
         $data = $this->jsonResponseHelper->checkData($data,'App\Entity\Procedures');
-        $data = $this->validator($data);
+        $data = $this->validateService->procedures($data);
         if(!$data){
             return $this->jsonResponseHelper->generate('Error',422,'check your fields');
         }
@@ -67,7 +67,7 @@ class ProceduresService
             return $this->jsonResponseHelper->generate('Not Found',404,'Procedure not found');
         }
         $data = $this->jsonResponseHelper->checkData($data,'App\Entity\Procedures');
-        $data = $this->validator($data);
+        $data = $this->validateService->procedures($data);
         if(!$data){
             return $this->jsonResponseHelper->generate('Error',422,'Check your fields');
         }
@@ -86,17 +86,5 @@ class ProceduresService
         $this->em->remove($procedure);
         $this->em->flush();
         return $this->jsonResponseHelper->generate('Delete',200,'procedure has been delete');
-    }
-
-    public function validator($data): null|Procedures
-    {
-        if($data == null){
-            return null;
-        }
-        if(($data->getTitle()!==null)and($data->getDescription()!==null)){
-            return $data;
-        }else{
-            return null;
-        }
     }
 }

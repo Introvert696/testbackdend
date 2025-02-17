@@ -3,6 +3,7 @@ namespace App\Services;
 
 use App\DTO\ProcListDTO;
 use App\Entity\ProcedureList;
+use App\Entity\Procedures;
 use App\Repository\ProceduresRepository;
 
 class ValidateService
@@ -45,10 +46,27 @@ class ValidateService
     }
     public function procedureListWithProcedure(ProcListDTO $pc): ProcListDTO|null
     {
-        $procedure = $this->proceduresRepository->find($pc->getProcedureId());
+        if($pc->getProcedureId()){
+            $procedure = $this->proceduresRepository->find($pc->getProcedureId());
+        }
+        else{
+            return null;
+        }
+
         if(($pc->getProcedureId()!==null)and($pc->getQueue()!==null)and($pc->getStatus()!==null)and($procedure!==null))
             return $pc;
         else
             return null;
+    }
+    public function procedures(Procedures|null $data): Procedures|null
+    {
+        if($data == null){
+            return null;
+        }
+        if(($data->getTitle()!==null)and($data->getDescription()!==null)){
+            return $data;
+        }else{
+            return null;
+        }
     }
 }

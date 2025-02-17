@@ -7,7 +7,7 @@ use App\Tests\Services\BaseService;
 
 class ProcListDtoToProcListTest extends BaseService
 {
-    public function testMain(): void
+    public function testValid(): void
     {
         $procListDto = new ProcListDTO();
         $procListDto->setSourceType('test');
@@ -25,6 +25,11 @@ class ProcListDtoToProcListTest extends BaseService
         $this->assertObjectHasProperty('source_id',$procList);
         $this->assertObjectHasProperty('source_type',$procList);
         $this->assertObjectHasProperty('status',$procList);
-
+    }
+    public function testNotValid(): void
+    {
+        $procListDto = new ProcListDTO();
+        $procList = $this->adapterService->procListDtoToProcList($procListDto,1);
+        $this->assertNull($procList);
     }
 }

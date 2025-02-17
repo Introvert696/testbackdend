@@ -18,6 +18,50 @@ class ChambersService
         private readonly ValidateService $validator,
     )
     {}
+    public function addProcedure($id,$data): array
+    {
+        $procedures = [];
+        $chamber = $this->chambersRepository->find($id);
+        $data = $this->jsonResponseHelpers->checkData($data,'App\DTO\ProcListDTO[]');
+
+        if(!$data)
+        {
+            return $this->jsonResponseHelpers->generate('Error',422,'Check fields (data)');
+        }
+        foreach ($data as $d){
+            if(!($this->validator->procListDTO($d))){
+                return $this->jsonResponseHelpers->generate('Error',402,'Check fields (validator)');
+            }
+
+        }
+        if(!$chamber){
+            return $this->jsonResponseHelpers->generate('Error',404,'Chamber not found');
+        }
+        $procedureLists = $this->procedureListRepository->findBy([
+            'source_type' => 'chambers',
+            'source_id' => $id
+        ]);
+        if($procedureLists){
+            foreach ($procedureLists as $pl){
+                $this->em->remove($pl);
+            }
+        }
+        foreach ($data as $d){
+            if($d === null){
+                return $this->jsonResponseHelpers->generate('Not Found',404,'Procedure - not found');
+            }
+            $proc =$this->validator->procedureListWithProcedure($d);
+            if(!$proc){
+                return $this->jsonResponseHelpers->generate('Not Valid',502,'Procedure not valid');
+            }
+            $procList = $this->adaptersService->procListDtoToProcList($proc,$id);
+            $this->em->persist($procList);
+            $procedures[]=$this->adaptersService->procedureListToChamberProcedureDto($procList);
+        }
+        $this->em->flush();
+
+        return $this->jsonResponseHelpers->generate('Update',200,'Chambers procedure has been update',$procedures);
+    }
     public function all(): array
     {
         $chambers = $this->chambersRepository->findAll();
@@ -57,59 +101,16 @@ class ChambersService
 
         return $response;
     }
-    public function addProcedure($id,$data): array
-    {
-        $procedures = [];
-        $chamber = $this->chambersRepository->find($id);
-        $data = $this->jsonResponseHelpers->checkData($data,'App\DTO\ProcListDTO[]');
 
-        if(!$data)
-        {
-            return $this->jsonResponseHelpers->generate('Error',422,'Check fields (data)');
-        }
-        foreach ($data as $d){
-           if(!($this->validator->procListDTO($d))){
-               return $this->jsonResponseHelpers->generate('Error',402,'Check fields (validator)');
-           }
-
-        }
-        if(!$chamber){
-            return $this->jsonResponseHelpers->generate('Error',404,'Chamber not found');
-        }
-        $procedureLists = $this->procedureListRepository->findBy([
-                'source_type' => 'chambers',
-                'source_id' => $id
-            ]);
-        if($procedureLists){
-            foreach ($procedureLists as $pl){
-                $this->em->remove($pl);
-            }
-        }
-        foreach ($data as $d){
-            if($d === null){
-                return $this->jsonResponseHelpers->generate('Not Found',404,'Procedure - not found');
-            }
-            $proc =$this->validator->procedureListWithProcedure($d);
-            if(!$proc){
-                return $this->jsonResponseHelpers->generate('Not Valid',502,'Procedure not valid');
-            }
-            $procList = $this->adaptersService->procListDtoToProcList($proc,$id);
-            $this->em->persist($procList);
-            $procedures[]=$this->adaptersService->procedureListToChamberProcedureDto($procList);
-        }
-        $this->em->flush();
-
-        return $this->jsonResponseHelpers->generate('Update',200,'Chambers procedure has been update',$procedures);
-    }
     public function create(string $data):array
     {
         $data = $this->jsonResponseHelpers->checkData($data,'App\Entity\Chambers');
         if($data === null){
-            return $this->jsonResponseHelpers->generate('Error',400,'check your request body');
+            return $this->jsonResponseHelpers->generate('Error',409,'check your request body');
         }
         $data = $this->validator->chambersRequestData($data);
         if(!$data){
-            return $this->jsonResponseHelpers->generate('Error',400,'check your request body');
+            return $this->jsonResponseHelpers->generate('Error',409,'check your request body');
         }
         $chamber = $this->chambersRepository->findBy([
             'number' =>$data->getNumber()
@@ -150,7 +151,7 @@ class ChambersService
     {
         $chamber= $this->chambersRepository->find($id);
         if(!$chamber){
-            return $this->jsonResponseHelpers->generate('Not Found',404,'Chamber '.$id.' - not found');
+            return $this->jsonResponseHelpers->generate('Not found',404,'Chamber '.$id.' - not found');
         }
         $chamberPatient = $chamber->getChambersPatients()->getValues();
         if($chamberPatient){

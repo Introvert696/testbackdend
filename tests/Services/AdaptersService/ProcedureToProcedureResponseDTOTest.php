@@ -7,7 +7,7 @@ use App\Tests\Services\BaseService;
 
 class ProcedureToProcedureResponseDTOTest extends BaseService
 {
-    public function testMain(): void
+    public function testValid(): void
     {
         $procedure = new Procedures();
         $procedure->setTitle("tst");
@@ -18,5 +18,12 @@ class ProcedureToProcedureResponseDTOTest extends BaseService
         $this->assertObjectHasProperty('title',$procRespDTO);
         $this->assertObjectHasProperty('description',$procRespDTO);
         $this->assertObjectHasProperty('entityList',$procRespDTO);
+    }
+    public function testNotValid(): void
+    {
+        $procedure = new Procedures();
+        $procRespDTO = $this->adapterService->procedureToProcedureResponseDTO($procedure);
+
+        $this->assertNull($procRespDTO);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Symfony\Component\Serializer\Exception\NotEncodableValueException;
+use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 
 
@@ -32,7 +33,7 @@ class JsonResponseHelper
         try{
             $data = $this->serializer->deserialize($data,$class,'json');
         }
-        catch (NotEncodableValueException){
+        catch (NotEncodableValueException|NotNormalizableValueException){
             return null;
         }
 
