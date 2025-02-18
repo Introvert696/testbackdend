@@ -42,18 +42,19 @@ jobs:
     - name: Install dependincies
       run: composer install --no-progress --prefer-dist --optimize-autoloader
 
-    - name: Load Fixtures
-      run: |
-        php bin/console doctrine:fixtures:load --env=test
-
 
     - name: Create database schema
       run: |
-        php bin/console doctrine:database:create --if-not-exists --env=test
-        php bin/console doctrine:schema:create --env=test
+        php bin/console doctrine:database:create --if-not-exists --env=test --no-interaction
+        php bin/console doctrine:schema:create --env=test --no-interaction
+    
+    - name: Load Fixtures
+      run: |
+        php bin/console doctrine:fixtures:load --env=test --no-interaction
+
     - name: Run test
       run: |
-        php bin/phpunit --testdox
+        php bin/phpunit
 
     - name: Send Telegram Notify on succes
       if: success()
