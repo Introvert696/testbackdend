@@ -68,6 +68,19 @@ final class ChamberController extends AbstractController
             ]
         ),
     )]
+    #[OA\Response(
+        response: 404,
+        description: 'Return all chambers',
+        content: new OA\JsonContent(
+            ref: new Model(type:ResponseDTO::class),
+            type: "object",
+            example: [
+                "type"=>"Not found",
+                "code"=>404,
+                "message" => "Chamber not found",
+            ]
+        ),
+    )]
     #[OA\Tag(name:"Chamber")]
     public function show(int $id): JsonResponse
     {
@@ -196,7 +209,9 @@ final class ChamberController extends AbstractController
     #[OA\Tag(name:"Chamber")]
     public function updateProcedures(Request $request, int $id): JsonResponse
     {
-        $response = $this->chambersService->addProcedure($id,$request->getContent());
+        $response = $this->chambersService->addProcedure(
+            $id,$request->getContent()
+        );
         return $this->json($response,$response['code']);
     }
     #[Route(name: 'store_chambers', methods: ["POST"])]
@@ -211,7 +226,6 @@ final class ChamberController extends AbstractController
                 [
                     'number' => 1,
                 ],
-
         ))]
     #[OA\Response(
         response: 402,
@@ -266,7 +280,9 @@ final class ChamberController extends AbstractController
     #[OA\Tag(name:"Chamber")]
     public function store(Request $request): JsonResponse
     {
-        $response = $this->chambersService->create($request->getContent());
+        $response = $this->chambersService->create(
+            $request->getContent()
+        );
         return $this->json($response,$response['code']);
     }
     #[Route('/{id}', name: 'update_chambers', methods: ["PATCH"])]
@@ -314,7 +330,10 @@ final class ChamberController extends AbstractController
     #[OA\Tag(name:"Chamber")]
     public function update(Request $request,int|null $id): JsonResponse
     {
-        $response = $this->chambersService->update($id,$request->getContent());
+        $response = $this->chambersService->update(
+            $id,
+            $request->getContent()
+        );
         return $this->json($response,$response['code']);
     }
 

@@ -27,3 +27,7 @@ bin/console doctrine:fixtures:load --no-interaction
 ```dotenv
 APP_ENV=prod
 ```
+
+# FAQ
+## Ошибка - "502 Bad Gateway nginx/1.27.4"
+Проверьте, создали ли вы файл .env

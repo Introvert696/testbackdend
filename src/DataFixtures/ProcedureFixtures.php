@@ -19,15 +19,15 @@ class ProcedureFixtures extends Fixture
     {
         $limit = $this->parameterBag->get('fixture_rate');
         $faker = Factory::create();
-
         for($i=0;$i<$limit;$i++){
             $procedure = new Procedures();
-            $procedure->setTitle($faker->word.$faker->unique()->numberBetween(0,1000));
+            $procedure->setTitle(
+                $faker->word.$faker->unique()->numberBetween(0,1000)
+            );
             $procedure->setDescription($faker->sentence);
             $manager->persist($procedure);
             $this->addReference('procedure_'.$i,$procedure);
         }
-
         $manager->flush();
     }
 }

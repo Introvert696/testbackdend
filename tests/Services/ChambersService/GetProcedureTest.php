@@ -10,7 +10,7 @@ class GetProcedureTest extends BaseService
     public function testWithoutProcedure(): void
     {
         $chamber = new Chambers();
-        $chamber->setNumber(2332);
+        $chamber->setNumber(1332);
         $this->em->persist($chamber);
         $this->em->flush();
         $procedures = $this->chamberService->getProcedure($chamber->getId());

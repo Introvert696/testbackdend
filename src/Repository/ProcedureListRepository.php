@@ -16,7 +16,6 @@ class ProcedureListRepository extends ServiceEntityRepository
         ManagerRegistry $registry,
     )
     {
-
         parent::__construct($registry, ProcedureList::class);
     }
 }

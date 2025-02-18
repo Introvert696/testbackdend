@@ -156,7 +156,9 @@ final class PatientController extends AbstractController
     #[OA\Tag(name:"Patient")]
     public function store(Request $request): JsonResponse
     {
-        $response = $this->patientsServices->store($request->getContent());
+        $response = $this->patientsServices->store(
+            $request->getContent()
+        );
         return $this->json($response,$response['code']);
     }
     #[Route('/{id}', name: 'update_patients', defaults: ['id'=>null], methods: ['PATCH'])]
@@ -233,7 +235,9 @@ final class PatientController extends AbstractController
     #[OA\Tag(name:"Patient")]
     public function update(Request $request,int|null $id): JsonResponse
     {
-        $response = $this->patientsServices->update($id,$request->getContent());
+        $response = $this->patientsServices->update(
+            $id,$request->getContent()
+        );
         return $this->json($response,$response['code']);
     }
     #[Route('/{id}', name: 'delete_patients', defaults: ['id'=>null], methods: ['DELETE'])]
@@ -266,7 +270,7 @@ final class PatientController extends AbstractController
     #[OA\Tag(name:"Patient")]
     public function delete(int|null $id): JsonResponse
     {
-        $response = $this->patientsServices->remove($id);
+        $response = $this->patientsServices->delete($id);
         return $this->json($response,$response['code']);
     }
 }

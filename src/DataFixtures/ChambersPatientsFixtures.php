@@ -15,21 +15,23 @@ class ChambersPatientsFixtures extends Fixture implements DependentFixtureInterf
 {
     public function __construct(
         private readonly ParameterBagInterface $parameterBag
-    )
-    {
-    }
+    ){}
     public function load(ObjectManager $manager): void
     {
         $limit = $this->parameterBag->get('fixture_rate');
         $faker = Factory::create();
-
         for($i=0;$i<$limit;$i++){
             $cp = new ChambersPatients();
-            $cp->setPatients($this->getReference('patients_'.$faker->unique()->numberBetween(0,$limit-1),Patients::class));
-            $cp->setChambers($this->getReference('chambers_'.$faker->numberBetween(0,$limit-1),Chambers::class));
+            $cp->setPatients($this->getReference(
+                'patients_'.$faker->unique()->numberBetween(0,$limit-1),
+                Patients::class)
+            );
+            $cp->setChambers($this->getReference(
+                'chambers_'.$faker->numberBetween(0,$limit-1),
+                Chambers::class)
+            );
             $manager->persist($cp);
         }
-
         $manager->flush();
     }
     public function getDependencies(): array

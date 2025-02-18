@@ -11,7 +11,7 @@ class ValidateService
     public function __construct(
         private readonly ProceduresRepository $proceduresRepository,
     ){}
-    public function chambersRequestData(object $data): object|null
+    public function chambersRequestData(object|null $data): object|null
     {
         if($data->getNumber()!==null)
             return $data;
@@ -19,53 +19,65 @@ class ValidateService
     }
     public function procedureList(ProcedureList $pl): ProcedureList|null
     {
-        if(($pl->getProcedures()!==null) and($pl->getStatus()!==null) and ($pl->getQueue()!==null) and ($pl->getId())){
+        $res =  (($pl->getProcedures()!==null) and
+                ($pl->getStatus()!==null) and
+                ($pl->getQueue()!==null) and
+                ($pl->getId()));
+        if($res){
             return $pl;
-        }
-        else{
+        } else {
             return null;
         }
     }
     public function procListDTO(ProcListDTO $pld): ProcListDTO|null
     {
-        if(($pld->procedure_id!==null) and ($pld->queue!==null) and ($pld->status!==null)){
+        $res = (($pld->procedure_id!==null) and
+                ($pld->queue!==null) and
+                ($pld->status!==null));
+        if($res){
             return $pld;
-        }
-        else{
+        } else {
             return null;
         }
     }
     public function patients(object $data): object|null
     {
-        if(($data->getName()!==null) and ($data->getCardNumber()!== null)){
+        $res = (($data->getName()!==null) and
+                ($data->getCardNumber()!== null));
+        if($res)
+        {
             return $data;
-        }
-        else{
+        } else {
             return null;
         }
     }
     public function procedureListWithProcedure(ProcListDTO $pc): ProcListDTO|null
     {
         if($pc->getProcedureId()){
-            $procedure = $this->proceduresRepository->find($pc->getProcedureId());
-        }
-        else{
+            $procedure = $this->proceduresRepository->find(
+                $pc->getProcedureId()
+            );
+        } else {
             return null;
         }
-
-        if(($pc->getProcedureId()!==null)and($pc->getQueue()!==null)and($pc->getStatus()!==null)and($procedure!==null))
+        $res = (($pc->getProcedureId()!==null) and
+                ($pc->getQueue()!==null) and
+                ($pc->getStatus()!==null) and
+                ($procedure!==null));
+        if($res){
             return $pc;
-        else
+        } else {
             return null;
+        }
     }
     public function procedures(Procedures|null $data): Procedures|null
     {
-        if($data == null){
-            return null;
-        }
-        if(($data->getTitle()!==null)and($data->getDescription()!==null)){
+        $res = (($data !== null) and
+                ($data->getTitle()!==null) and
+                ($data->getDescription()!==null));
+        if($res){
             return $data;
-        }else{
+        } else {
             return null;
         }
     }

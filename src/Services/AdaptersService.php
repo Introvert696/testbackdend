@@ -19,38 +19,41 @@ class AdaptersService
     public function __construct(
         private readonly ProceduresRepository $proceduresRepository,
         private readonly ValidateService $validator,
-    )
+    ){}
+    public function patientToPatientResponseDTO(
+        Patients $patients,
+        $procList = null
+    ): PatientResponseDTO| null
     {
-    }
-
-    public function patientToPatientResponseDTO(Patients $patients, $procList = null): PatientResponseDTO| null
-    {
-        // validate input Patients
         $patients = $this->validator->patients($patients);
         if(!$patients){
             return null;
         }
         $patientResponse = new PatientResponseDTO();
-        if($patients->getId())
-        {
+        if($patients->getId()){
             $patientResponse->setId($patients->getId());
         }
         $patientResponse->setName($patients->getName());
         $patientResponse->setCardNumber($patients->getCardNumber());
-        if ($patients->getChambersPatients()) {
-            $patientResponse->setChamber($patients->getChambersPatients()->getChambers()->getId());
-        }
-        if ($procList) {
-            foreach ($procList as $pl) {
 
-                $patientResponse->addProc($this->procedureListToChamberProcedureDto($pl));
+        if ($patients->getChambersPatients()){
+            $patientResponse->setChamber(
+                $patients->getChambersPatients()->getChambers()->getId()
+            );
+        }
+        if ($procList){
+            foreach ($procList as $pl){
+                $patientResponse->addProc(
+                    $this->procedureListToChamberProcedureDto($pl)
+                );
             }
         }
 
         return $patientResponse;
     }
-
-    public function procedureListToChamberProcedureDto(ProcedureList $procList): ChamberProcedureDTO|null
+    public function procedureListToChamberProcedureDto(
+        ProcedureList $procList
+    ): ChamberProcedureDTO|null
     {
         $pl = $this->validator->procedureList($procList);
         if(!$pl){
@@ -65,7 +68,10 @@ class AdaptersService
 
         return $procListDTO;
     }
-    public function procListDtoToProcList(ProcListDTO $procList, $id): ProcedureList|null
+    public function procListDtoToProcList(
+        ProcListDTO $procList,
+        $id
+    ): ProcedureList|null
     {
         $procList = $this->validator->procListDTO($procList);
         if(!$procList){
@@ -81,7 +87,9 @@ class AdaptersService
 
         return $procedureList;
     }
-    public function procedureToProcedureResponseDTO(Procedures $procedures): ProcedureResponseDTO|null
+    public function procedureToProcedureResponseDTO(
+        Procedures $procedures
+    ): ProcedureResponseDTO|null
     {
         $newProcResponse = new ProcedureResponseDTO();
         $procedures= $this->validator->procedures($procedures);
@@ -96,7 +104,9 @@ class AdaptersService
 
         return $newProcResponse;
     }
-    public function procListToProcListRespDTO(ProcedureList $procList): ProcListRespDTO|null
+    public function procListToProcListRespDTO(
+        ProcedureList $procList
+    ): ProcListRespDTO|null
     {
         $procList = $this->validator->procedureList($procList);
         if(!$procList){

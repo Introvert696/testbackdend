@@ -17,7 +17,7 @@ class PatientFactory
     {
         $patients = new Patients();
         $patients->setName("Test user from factory");
-        $patients->setCardNumber(321442);
+        $patients->setCardNumber(12);
 
         return $this->upload($patients);
     }

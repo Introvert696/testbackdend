@@ -20,71 +20,118 @@ class ProceduresService
     public function all(): array
     {
         $procedures = $this->proceduresRepository->findAll();
-        return $this->jsonResponseHelper->generate('OK',200,'procedures',$procedures);
+        return $this->jsonResponseHelper->generate(
+            'OK',
+            200,
+            'procedures',
+            $procedures);
     }
     public function about(int $id): array
     {
         $procedure = $this->proceduresRepository->find($id);
         if(!$procedure){
-            return $this->jsonResponseHelper->generate('Not found',404,'Procedure not found');
+            return $this->jsonResponseHelper->generate(
+                'Not found',
+                404,
+                'Procedure not found');
         }
-        $procedureResponse = $this->adaptersService->procedureToProcedureResponseDTO($procedure);
+        $procedureResponse = $this->adaptersService
+            ->procedureToProcedureResponseDTO($procedure);
         $entities = $this->procedureListRepository->findBy([
             'source_id'=>$procedure->getId(),
             'status' => 1
         ]);
-        if(!$entities) {
-            return $this->jsonResponseHelper->generate('OK', 200, 'Procedure ingo', $procedureResponse);
+        if(!$entities){
+            return $this->jsonResponseHelper->generate(
+                'OK',
+                200,
+                'Procedure ingo',
+                $procedureResponse);
         }
         foreach ($entities as $et){
-            $procedureResponse->addEntity($this->adaptersService->procListToProcListRespDTO($et));
+            $procedureResponse->addEntity(
+                $this->adaptersService->procListToProcListRespDTO($et)
+            );
         }
-
-        return $this->jsonResponseHelper->generate('OK',200,'about procedure info',$procedureResponse);
+        return $this->jsonResponseHelper->generate(
+            'OK',
+            200,
+            'about procedure info',
+            $procedureResponse);
     }
     // переделать
     public function store($data):array{
-        $data = $this->jsonResponseHelper->checkData($data,'App\Entity\Procedures');
-        $data = $this->validateService->procedures($data);
+        $data = $this->validateService->procedures(
+            $this->jsonResponseHelper->checkData($data,'App\Entity\Procedures')
+        );
         if(!$data){
-            return $this->jsonResponseHelper->generate('Error',422,'check your fields');
+            return $this->jsonResponseHelper->generate(
+                'Error',
+                422,
+                'check your fields');
         }
         $issetProcedure = $this->proceduresRepository->findBy([
             'title' => $data->getTitle()
         ]);
         if($issetProcedure){
-            return $this->jsonResponseHelper->generate('Conflict',409,'title has exists',$this->jsonResponseHelper->first($issetProcedure));
+            return $this->jsonResponseHelper->generate(
+                'Conflict',
+                409,
+                'title has exists',
+                $this->jsonResponseHelper->first($issetProcedure));
         }
         $this->em->persist($data);
         $this->em->flush();
 
-        return $this->jsonResponseHelper->generate('create',200,'Procedure has been create',$data);
+        return $this->jsonResponseHelper->generate(
+            'create',
+            200,
+            'Procedure has been create',
+            $data);
     }
     public function update(int $id,$data): array
     {
         $procedure = $this->proceduresRepository->find($id);
         if(!$procedure) {
-            return $this->jsonResponseHelper->generate('Not Found',404,'Procedure not found');
+            return $this->jsonResponseHelper->generate(
+                'Not Found',
+                404,
+                'Procedure not found');
         }
-        $data = $this->jsonResponseHelper->checkData($data,'App\Entity\Procedures');
-        $data = $this->validateService->procedures($data);
+        $data = $this->validateService->procedures(
+            $this->jsonResponseHelper->checkData($data,'App\Entity\Procedures')
+        );
         if(!$data){
-            return $this->jsonResponseHelper->generate('Error',422,'Check your fields');
+            return $this->jsonResponseHelper->generate(
+                'Error',
+                422,
+                'Check your fields');
         }
         $procedure->setTitle($data->getTitle());
         $procedure->setDescription($data->getDescription());
         $this->em->flush();
 
-        return $this->jsonResponseHelper->generate('Update',200,'Procedure has been updated',$procedure);
+        return $this->jsonResponseHelper->generate(
+            'Update',
+            200,
+            'Procedure has been updated',
+            $procedure);
     }
     public function delete(int $id): array
     {
         $procedure = $this->proceduresRepository->find($id);
         if(!$procedure){
-           return $this->jsonResponseHelper->generate('Not Found',404,'Procedure not found');
+           return $this->jsonResponseHelper->generate(
+               'Not Found',
+               404,
+               'Procedure not found');
         }
         $this->em->remove($procedure);
         $this->em->flush();
-        return $this->jsonResponseHelper->generate('Delete',200,'procedure has been delete');
+
+        return $this->jsonResponseHelper->generate(
+            'Delete',
+            200,
+            'procedure has been delete');
     }
 }
