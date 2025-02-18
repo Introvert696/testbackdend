@@ -6,6 +6,45 @@ jobs:
   test: 
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_DB: symfony_test
+          POSTGRES_USER: symfony
+          POSTGRES_PASSWORD: symfony
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U symfnoy -d symfnoy_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+          
+
     steps:
-    - name: Run tests
-      uses: chindit/actions-phpunit-symfony@1.0.0
+    - name: Checkout code
+      uses: actions/checkout@3
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@2.32.0
+      with:
+         php-version: "8.1"
+         tools: composer
+         coverage: none
+
+    - name: Install dependincies
+      run: composer install --no-progress --prefer-dist --optimize-autoloader
+
+    - name: Setup Environment variables
+      run: |
+        echo "DATABASE_URL=postgresql://symfony:symfony@localhost:5432/symfony?serverVersion=14" > .env.test
+
+    - name: Create database schema
+      run: |
+        php bin/console doctrine:database:create -if-not-exists --env=test
+        php bin/console doctrine:schema:create --env=test
+    - name: Run test
+      run: |
+        php bin/phpunit --testdox
+      
