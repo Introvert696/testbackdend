@@ -7,6 +7,5 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Test
-      run: echo 222
-  
+    - name: Run tests
+      uses: chindit/actions-phpunit-symfony@1.0.0
