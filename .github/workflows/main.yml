@@ -34,7 +34,7 @@ jobs:
          coverage: none
          
     - name: Copy .env.example to .env
-      run: cp .env.example .env
+      run: cp .exapmle.env .env
 
          
     - name: Setup Environment variables
