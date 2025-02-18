@@ -36,11 +36,15 @@ jobs:
          
     - name: Setup Environment variables
       run: |
-          echo -e "APP_ENV=prod\nAPP_SECRET=30105fdbbfea30c5a09dfd3a095d5a23\nDATABASE_URL=postgresql://symfony:symfony@localhost:5432/symfony?serverVersion=14" > .env
+          echo -e "APP_ENV=dev\nAPP_SECRET=30105fdbbfea30c5a09dfd3a095d5a23\nDATABASE_URL=postgresql://symfony:symfony@localhost:5432/symfony?serverVersion=14" > .env
           echo -e "KERNEL_CLASS='App\Kernel'\nAPP_SECRET='\$ecretf0rt3st'\nSYMFONY_DEPRECATIONS_HELPER=999999\nPANTHER_APP_ENV=panther\nPANTHER_ERROR_SCREENSHOT_DIR=./var/error-screenshots\nDATABASE_URL=postgresql://symfony:symfony@localhost:5432/symfony?serverVersion=14" > .env.test
-
+          
     - name: Install dependincies
       run: composer install --no-progress --prefer-dist --optimize-autoloader
+
+    - name: Load Fixtures
+      run: |
+        php bin/console doctrine:fixtures:load --env=test
 
 
     - name: Create database schema
@@ -50,4 +54,20 @@ jobs:
     - name: Run test
       run: |
         php bin/phpunit --testdox
+
+    - name: Send Telegram Notify on succes
+      if: success()
+      run: |
+        curl -X POST \
+            -H 'Content-Type: application/json' \
+            -d '{"chat_id": "${{ secrets.TELEGRAM_CHAT_ID }}", "text": "✅ Tests passed successfully!", "parse_mode": "HTML"}' \
+            https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage
+    - name: Send Telegram Notify on failure
+      if: fafailure()
+      run: |
+        curl -X POST \
+            -H 'Content-Type: application/json' \
+            -d '{"chat_id": "${{ secrets.TELEGRAM_CHAT_ID }}", "text": "❌ Tests failed! Check the logs.", "parse_mode": "HTML"}' \
+            https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage
+            
       
