@@ -58,7 +58,7 @@ class UpdateTest extends BaseService
            "name" => "test user",
            "card_number" => 3242
        ];
-        $response= $this->patientsServices->createOrFind(json_encode($patient));
+        $response= $this->patientsServices->store(json_encode($patient));
         if($response['type']=== 'Conflict'){
             $this->assertSame(409,$response['code']);
         }

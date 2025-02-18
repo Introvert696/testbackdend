@@ -12,7 +12,7 @@ class DeleteTest extends BaseService
             "name" => "test user",
             "card_number" => 2
         ];
-        $response= $this->patientsServices->createOrFind(json_encode($patient));
+        $response= $this->patientsServices->store(json_encode($patient));
         $patient = $response['data'];
 
         $response = $this->patientsServices->delete($patient->getId());

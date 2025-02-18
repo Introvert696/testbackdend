@@ -156,7 +156,7 @@ final class PatientController extends AbstractController
     #[OA\Tag(name:"Patient")]
     public function store(Request $request): JsonResponse
     {
-        $response = $this->patientsServices->createOrFind($request->getContent());
+        $response = $this->patientsServices->store($request->getContent());
         return $this->json($response,$response['code']);
     }
     #[Route('/{id}', name: 'update_patients', defaults: ['id'=>null], methods: ['PATCH'])]

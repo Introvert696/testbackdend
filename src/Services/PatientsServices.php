@@ -27,7 +27,7 @@ class PatientsServices
         return $this->responseHelper->generate('Ok',200,'return all patient',$this->patientsRepository->findAll());
     }
     // rename this method
-    public function createOrFind($data):array
+    public function store($data):array
     {
         $data = $this->jsonResponseHelper->checkData($data,'App\Entity\Patients');
         if(!$data){
@@ -49,6 +49,7 @@ class PatientsServices
     {
         $updatedData = $this->jsonResponseHelper->checkData($data,'App\DTO\PatientDTO');
         $patient = $this->patientsRepository->find($id);
+        // засунуть ифы и проверки в валидатор
         if(!$updatedData){
             return $this->responseHelper->generate('Error',402,'Field not filled');
         }
@@ -72,7 +73,8 @@ class PatientsServices
             $this->em->persist($chamberPatients);
         }
         $this->em->flush();
-        return $this->responseHelper->generate('Updated',200,'Patient has been updated',$this->adaptersService->patientToPatientResponseDTO($patient) );
+        return $this->responseHelper->generate('Updated',200,'Patient has been updated',
+            $this->adaptersService->patientToPatientResponseDTO($patient) );
     }
     public function delete($id): array
     {

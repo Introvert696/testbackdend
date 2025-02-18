@@ -8,5 +8,6 @@ done
 php bin/console doctrine:database:create --if-not-exists
 
 php bin/console doctrine:migrations:migrate --no-interaction
+chown -R www-data:www-data /var/www/symfony/var
 
 exec "php-fpm"
