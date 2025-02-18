@@ -21,7 +21,6 @@ jobs:
           --health-timeout=5s
           --health-retries=3
           
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4.2.2
