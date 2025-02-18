@@ -32,13 +32,18 @@ jobs:
          php-version: "8.1"
          tools: composer
          coverage: none
+         
+    - name: Copy .env.example to .env
+      run: cp .env.example .env
+
+         
+    - name: Setup Environment variables
+      run: |
+        echo "DATABASE_URL=postgresql://symfony:symfony@localhost:5432/symfony?serverVersion=14" > .env.test
 
     - name: Install dependincies
       run: composer install --no-progress --prefer-dist --optimize-autoloader
 
-    - name: Setup Environment variables
-      run: |
-        echo "DATABASE_URL=postgresql://symfony:symfony@localhost:5432/symfony?serverVersion=14" > .env.test
 
     - name: Create database schema
       run: |
