@@ -44,8 +44,6 @@ WORKDIR /var/www/symfony
 
 RUN COMPOSER_ALLOW_SUPERUSER=1 composer install --no-scripts --no-progress --prefer-dist
 
-RUN chown -R www-data:www-data var/cache var/log
-
 EXPOSE 9000
 
 CMD ["php-fpm"]
