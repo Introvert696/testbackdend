@@ -32,14 +32,11 @@ jobs:
          php-version: "8.1"
          tools: composer
          coverage: none
-         
-    - name: Copy .env.example to .env
-      run: cp .exapmle.env .env
 
          
     - name: Setup Environment variables
       run: |
-        cat <<EOF > .env.test
+        cat <<EOF > .env
           APP_ENV=dev
           APP_SECRET=30105fdbbfea30c5a09dfd3a095d5a23
           EOF
