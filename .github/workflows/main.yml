@@ -63,7 +63,7 @@ jobs:
             -d '{"chat_id": "${{ secrets.TELEGRAM_CHAT_ID }}", "text": "✅ Tests passed successfully!", "parse_mode": "HTML"}' \
             https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage
     - name: Send Telegram Notify on failure
-      if: fafailure()
+      if: failure()
       run: |
         curl -X POST \
             -H 'Content-Type: application/json' \
