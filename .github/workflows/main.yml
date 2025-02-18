@@ -40,6 +40,7 @@ jobs:
     - name: Setup Environment variables
       run: |
         echo "DATABASE_URL=postgresql://symfony:symfony@localhost:5432/symfony?serverVersion=14" > .env.test
+        echo "DATABASE_URL=postgresql://symfony:symfony@localhost:5432/symfony?serverVersion=14" > .env
 
     - name: Install dependincies
       run: composer install --no-progress --prefer-dist --optimize-autoloader
