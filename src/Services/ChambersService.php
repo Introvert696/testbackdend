@@ -26,7 +26,14 @@ class ChambersService
             'source_type' => 'chambers',
             'source_id' => $id
         ]);
-        if(!$data or !$chamber){
+        if (!$chamber) {
+            return $this->responseHelper->generate(
+                'Not found',
+                ResponseHelper::STATUS_NOT_FOUND,
+                'Chamber not found'
+            );
+        }
+        if(!$data ){
             return $this->responseHelper->generate(
                 'Error',
                 ResponseHelper::STATUS_NOT_VALID_BODY,
@@ -154,13 +161,19 @@ class ChambersService
     {
         $data = $this->responseHelper->checkData($data,'App\Entity\Chambers');
         $chamber = $this->chambersRepository->find($id);
-        $valid = (  (!$data) or
+        // переделать
+        $valid = ( (!$data) or
                     (gettype($data?->getNumber())!=="integer") or
-                    !$chamber or
                     $this->chambersRepository->findBy([
                         'number'=>$data->getNumber()
                     ])
         );
+        if(!$chamber){
+            return $this->responseHelper->generate(
+                'Not found',
+                ResponseHelper::STATUS_NOT_FOUND,
+                'Chamber not found');
+        }
         if($valid){
             return $this->responseHelper->generate(
                 'Error',

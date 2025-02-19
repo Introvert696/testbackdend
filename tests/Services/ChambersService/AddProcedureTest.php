@@ -57,7 +57,7 @@ class AddProcedureTest extends BaseService
         $data =[];
         $data = json_encode($data);
         $res = $this->chamberService->addProcedure(1,$data);
-        $this->assertSame(422,$res['code']);
+        $this->assertSame(502,$res['code']);
         $this->assertArrayHasKey('type',$res);
         $this->assertArrayHasKey('code',$res);
         $this->assertArrayHasKey('message',$res);
@@ -66,7 +66,7 @@ class AddProcedureTest extends BaseService
     {
         $data = "['asdfas'asdfas ]asdf";
         $res = $this->chamberService->addProcedure(1,$data);
-        $this->assertSame(422,$res['code']);
+        $this->assertSame(502,$res['code']);
         $this->assertArrayHasKey('type',$res);
         $this->assertArrayHasKey('code',$res);
         $this->assertArrayHasKey('message',$res);

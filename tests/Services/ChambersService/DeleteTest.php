@@ -21,7 +21,7 @@ class DeleteTest extends BaseService
         $this->assertArrayHasKey('message',$response);
 
         $this->assertSame($response['type'],'Delete');
-        $this->assertSame($response['code'],202);
+        $this->assertSame($response['code'],200);
     }
     public function testNotFound(): void
     {

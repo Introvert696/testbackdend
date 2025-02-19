@@ -56,8 +56,8 @@ class UpdateTest extends BaseService
         $this->assertArrayHasKey('type',$response);
         $this->assertArrayHasKey('code',$response);
         $this->assertArrayHasKey('message',$response);
-        $this->assertSame($response['type'],"Error");
-        $this->assertSame($response['code'],502);
+        $this->assertSame($response['type'],"Not found");
+        $this->assertSame($response['code'],404);
 
     }
 

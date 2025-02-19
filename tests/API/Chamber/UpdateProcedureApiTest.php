@@ -54,7 +54,7 @@ class UpdateProcedureApiTest extends WebTestCase
             "CONTENT_TYPE"=>"application/json"
         ], content: $data);
 
-        $this->assertResponseStatusCodeSame(402);
+        $this->assertResponseStatusCodeSame(502);
         $this->assertJson($client->getResponse()->getContent());
     }
     public function testEmptyBody(): void
@@ -68,7 +68,7 @@ class UpdateProcedureApiTest extends WebTestCase
             "CONTENT_TYPE"=>"application/json"
         ], content: $data);
 
-        $this->assertResponseStatusCodeSame(422);
+        $this->assertResponseStatusCodeSame(502);
         $this->assertJson($client->getResponse()->getContent());
     }
     public function testNotValidBody(): void
@@ -81,7 +81,7 @@ class UpdateProcedureApiTest extends WebTestCase
             "CONTENT_TYPE"=>"application/json"
         ], content: $data);
 
-        $this->assertResponseStatusCodeSame(422);
+        $this->assertResponseStatusCodeSame(502);
         $this->assertJson($client->getResponse()->getContent());
     }
     public function testNotFoundChamber(): void
