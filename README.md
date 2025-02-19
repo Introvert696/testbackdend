@@ -9,24 +9,15 @@ docker-compose up --build -d
 В данном случае у нас поднимаются все необходимые контейнеры и проект работает
 
 ## P.S Для заполнения тестовыми данными
-Нужно в env файле прописать APP_ENV - dev , т.е. режим разработки и войти в в контейнер **php** .
-1. Прописываем в .env и количество данных
-```dotenv
-APP_ENV=dev
-FIXTURE_RATE=300
-```
-2. Входим в контейнер **php**
+1. Заходим в контейнер 
 ```shell
-docker exec -it php /bin/bash
+docker exec -it php sh
 ```
-3. Выполняем загрузку тестовых данных
+2. Выполняем команду
 ```shell
-bin/console doctrine:fixtures:load --no-interaction
+php bin/console doctrine:fixtures:load --env=dev --no-interaction
 ```
-4. После переходим опять в режим прода
-```dotenv
-APP_ENV=prod
-```
+
 
 # FAQ
 ## Ошибка - "502 Bad Gateway nginx/1.27.4"
