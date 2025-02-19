@@ -1,8 +1,6 @@
 # Readme
 Для запуска проекта в докере нужно:
-## 1. Создать файл .env
-Его можно создать из файла .example.env, просто клонируем и переименовываем в .env
-## 2. Запускаем docker compose
+## 1. Запускаем docker compose
 ```shell
 docker-compose up --build -d
 ```
