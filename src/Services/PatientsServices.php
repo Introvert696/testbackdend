@@ -6,27 +6,24 @@ use App\Repository\ChambersRepository;
 use App\Repository\PatientsRepository;
 use App\Repository\ProcedureListRepository;
 use Doctrine\ORM\EntityManagerInterface;
-
 class PatientsServices
 {
     public function __construct(
-        private readonly EntityManagerInterface $em,
-        private readonly JsonResponseHelper $responseHelper,
-        private readonly PatientsRepository $patientsRepository,
-        private readonly ChambersRepository $chambersRepository,
+        private readonly EntityManagerInterface  $em,
+        private readonly ResponseHelper          $responseHelper,
+        private readonly PatientsRepository      $patientsRepository,
+        private readonly ChambersRepository      $chambersRepository,
         private readonly ProcedureListRepository $procedureListRepository,
         private readonly ChambersPatientsService $chambersPatientsService,
-        private readonly AdaptersService $adaptersService,
-        private readonly JsonResponseHelper $jsonResponseHelper,
-        private readonly ValidateService $validator,
-    )
-    {
-    }
+        private readonly AdaptersService         $adaptersService,
+        private readonly ResponseHelper          $jsonResponseHelper,
+        private readonly ValidateService         $validator,
+    ){}
     public function all(): array
     {
         return $this->responseHelper->generate(
             'Ok',
-            200,
+            ResponseHelper::STATUS_OK,
             'return all patient',
             $this->patientsRepository->findAll());
     }
@@ -34,33 +31,21 @@ class PatientsServices
     {
         $data = $this->jsonResponseHelper
             ->checkData($data,'App\Entity\Patients');
-        if(!$data){
-            return $this->responseHelper->generate(
-                'Error',
-                400,
-                'Check fields');
-        }
-        if($this->validator->patients($data)===null){
-            return $this->responseHelper->generate(
-                'Error',
-                400,
-                'Check all fields');
-        }
         $result = $this->patientsRepository->findBy([
-            'card_number'=>$data->getCardNumber()
+            'card_number'=>$data?->getCardNumber()
         ]);
-        if($result){
+        if(!$data or !$this->validator->patients($data) or $result){
             return $this->responseHelper->generate(
-                'Conflict',
-                409,
-                'card_number already exists');
+                'Error',
+                ResponseHelper::STATUS_NOT_VALID_BODY,
+                'Check body');
         }
         $this->em->persist($data);
         $this->em->flush();
 
         return $this->responseHelper->generate(
             'Created',
-            200,
+            ResponseHelper::STATUS_OK,
             'patient has been created',
             $data);
     }
@@ -69,32 +54,28 @@ class PatientsServices
         $updatedData = $this->jsonResponseHelper
             ->checkData($data,'App\DTO\PatientDTO');
         $patient = $this->patientsRepository->find($id);
-        // засунуть ифы и проверки в валидатор
-        if(!$updatedData){
+        $chamber = $updatedData->chamber!=null?
+            $this->chambersRepository->find($updatedData?->chamber):null;
+        if(!$updatedData ){
             return $this->responseHelper->generate(
                 'Error',
-                402,
-                'Field not filled');
+                ResponseHelper::STATUS_NOT_VALID_FIELDS,
+               'Check you field');
         }
-        $chamber = $updatedData->chamber!=null?
-            $this->chambersRepository->find($updatedData->chamber):null;
         if(!$patient){
             return $this->responseHelper->generate(
-                'Not Found',
-                404,
-                'Patient not found');
-        }
-        if($updatedData->name){
-            $patient->setName($updatedData->name);
+                'Not found',
+                ResponseHelper::STATUS_NOT_FOUND,
+                'Patient - not found');
         }
         if (!$chamber){
             return $this->responseHelper->generate(
                 'Not found',
-                422,
-                'Chamber not found');
+                ResponseHelper::STATUS_NOT_FOUND,
+                'Patient - not found');
         }
+        $patient->setName($updatedData?->name ?? $patient->getName());
         $chamberPatients = $patient->getChambersPatients();
-
         if ($chamberPatients){
             $chamberPatients->setChambers($chamber);
         } else{
@@ -105,26 +86,27 @@ class PatientsServices
             $this->em->persist($chamberPatients);
         }
         $this->em->flush();
+
         return $this->responseHelper->generate(
             'Updated',
-            200,
+            ResponseHelper::STATUS_OK,
             'Patient has been updated',
             $this->adaptersService->patientToPatientResponseDTO($patient));
     }
     public function delete($id): array
     {
         $patient = $this->patientsRepository->getMore($id);
-
-        if(!$patient){
-            return $this->responseHelper->generate(
-                'Not found',
-                404,
-                "Patient not found");
-        }
         $procedureList = $this->procedureListRepository->findBy([
             'source_type' => 'patients',
             'source_id' => $id
         ]);
+
+        if(!$patient){
+            return $this->responseHelper->generate(
+                'Not found',
+                ResponseHelper::STATUS_NOT_FOUND,
+                "Patient not found");
+        }
         foreach ($procedureList as $pl){
             $this->em->remove($pl);
         }
@@ -133,22 +115,22 @@ class PatientsServices
 
         return $this->responseHelper->generate(
             'Ok',
-            200,
+            ResponseHelper::STATUS_OK,
             "Patient has been delete");
     }
     public function about(int $id): array
     {
         $patient = $this->patientsRepository->find($id);
-        if(!$patient){
-            return $this->responseHelper->generate(
-                'Not found',
-                404,
-                "Patient not found");
-        }
         $procList = $this->procedureListRepository->findBy([
             'source_type'=>'patients',
             'source_id'=>$id
         ]);
+        if(!$patient){
+            return $this->responseHelper->generate(
+                'Not found',
+                ResponseHelper::STATUS_NOT_FOUND,
+                "Patient not found");
+        }
         $patient = $this->adaptersService->patientToPatientResponseDTO(
             $patient,
             $procList
@@ -156,11 +138,8 @@ class PatientsServices
 
         return $this->responseHelper->generate(
             'Ok',
-            200,
+            ResponseHelper::STATUS_OK,
             "Patient info",
             $patient);
     }
-
-
-
 }

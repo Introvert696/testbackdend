@@ -7,7 +7,7 @@ use App\Repository\ProcedureListRepository;
 use App\Services\AdaptersService;
 use App\Services\ChambersPatientsService;
 use App\Services\ChambersService;
-use App\Services\JsonResponseHelper;
+use App\Services\ResponseHelper;
 use App\Services\PatientsServices;
 use App\Services\ProceduresService;
 use App\Services\ValidateService;
@@ -30,7 +30,7 @@ class BaseService extends KernelTestCase
     {
         self::bootKernel();
         $this->container = static::getContainer();
-        $this->jsonResopnseHelper = $this->container->get(JsonResponseHelper::class);
+        $this->jsonResopnseHelper = $this->container->get(ResponseHelper::class);
         $this->chamberService = $this->container->get(ChambersService::class);
         $this->adapterService = $this->container->get(AdaptersService::class);
         $this->chamberPatients = $this->container->get(ChambersPatientsService::class);
@@ -40,6 +40,7 @@ class BaseService extends KernelTestCase
         $this->procedureListRepository = $this->container->get(ProcedureListRepository::class);
         $this->patientRepository = $this->container->get(PatientsRepository::class);
         $this->em = $this->container->get('doctrine.orm.entity_manager');
+
 
     }
 }

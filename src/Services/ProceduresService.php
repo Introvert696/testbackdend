@@ -9,12 +9,12 @@ use Doctrine\ORM\EntityManagerInterface;
 class ProceduresService
 {
     public function __construct(
-        private readonly JsonResponseHelper $jsonResponseHelper,
-        private readonly EntityManagerInterface $em,
-        private readonly ProceduresRepository $proceduresRepository,
+        private readonly ResponseHelper          $jsonResponseHelper,
+        private readonly EntityManagerInterface  $em,
+        private readonly ProceduresRepository    $proceduresRepository,
         private readonly ProcedureListRepository $procedureListRepository,
-        private readonly AdaptersService $adaptersService,
-        private readonly ValidateService $validateService,
+        private readonly AdaptersService         $adaptersService,
+        private readonly ValidateService         $validateService,
     )
     {}
     public function all(): array

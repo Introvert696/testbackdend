@@ -41,6 +41,8 @@ ENV LC_ALL ru_RU.UTF-8
 COPY . /var/www/symfony
 
 WORKDIR /var/www/symfony
+RUN chmod +x entrypoint.sh
+RUN cp .example.env .env
 
 RUN COMPOSER_ALLOW_SUPERUSER=1 composer install --no-scripts --no-progress --prefer-dist
 

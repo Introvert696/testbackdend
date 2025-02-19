@@ -17,12 +17,14 @@ class UpdateTest extends BaseService
 
         $data = [
             "name"=>"test test test",
-            "chamber" => 2
+            "chamber" => 3
         ];
         $data = json_encode($data);
         $response = $this->patientsServices->update($patient->getId(),$data);
+
         $this->em->remove($patient);
         $this->em->flush();
+
         $this->assertArrayHasKey('type',$response);
         $this->assertArrayHasKey('code',$response);
         $this->assertArrayHasKey('message',$response);
@@ -49,39 +51,36 @@ class UpdateTest extends BaseService
         $this->assertArrayHasKey('code',$response);
         $this->assertArrayHasKey('message',$response);
 
-        $this->assertSame(422,$response['code']);
+        $this->assertSame(404,$response['code']);
         $this->assertSame('Not found',$response['type']);
     }
-    public function testConflict(): void
+    public function testNotValidChamber(): void
     {
+        $testName = "test frm unit test";
        $patient = [
            "name" => "test user",
-           "card_number" => 3242
+           "card_number" => 58
        ];
         $response= $this->patientsServices->store(json_encode($patient));
-        if($response['type']=== 'Conflict'){
-            $this->assertSame(409,$response['code']);
+        if($response['type']=== 'Error'){
+            $this->assertSame(502,$response['code']);
         }
         else{
             $patient = $response['data'];
             $data = [
-                "name"=>"test test test",
-                "chamber" => 2
+                "name"=>$testName,
+                "chamber" => 0
             ];
             $data = json_encode($data);
             $result = $this->patientsServices->update($patient->getId(),$data);
+            $this->patientsServices->delete($patient->getId());
             $this->assertArrayHasKey('type',$result);
             $this->assertArrayHasKey('code',$result);
             $this->assertArrayHasKey('message',$result);
-            $this->assertArrayHasKey('data',$result);
 
-            $this->assertSame(200,$result['code']);
-            $this->assertSame('Updated',$result['type']);
-            $this->assertSame('test test test',$result['data']->getName());
+            $this->assertSame(404,$result['code']);
+            $this->assertSame('Not found',$result['type']);
         }
-
-
-
-
     }
+
 }

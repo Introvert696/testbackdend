@@ -12,7 +12,7 @@ docker-compose up --build -d
 Нужно в env файле прописать APP_ENV - dev , т.е. режим разработки и войти в в контейнер **php** .
 1. Прописываем в .env и количество данных
 ```dotenv
-APP_ENV=prod
+APP_ENV=dev
 FIXTURE_RATE=300
 ```
 2. Входим в контейнер **php**

@@ -81,4 +81,17 @@ class ValidateService
             return null;
         }
     }
+    public function validate(mixed $data): array|null
+    {
+        $result = [];
+        for($i=0;$i<count($data);$i++){
+            if(!$data[$i]){
+                $result[$i] = null;
+            }
+            else{
+                $result[$i] = $data[$i];
+            }
+        }
+        return $result;
+    }
 }

@@ -29,34 +29,35 @@ class UpdateTest extends BaseService
     public function testConflict() : void
     {
         $chamber = new Chambers();
-        $chamber->setNumber(67);
+        $chamber->setNumber(627);
         $this->em->persist($chamber);
         $this->em->flush();
         $data = [
             "number"=>67
         ];
         $response = $this->chamberService->update($chamber->getId(),json_encode($data));
+        $this->em->remove($chamber);
+        $this->em->flush();
         $this->assertArrayHasKey('type',$response);
         $this->assertArrayHasKey('code',$response);
         $this->assertArrayHasKey('message',$response);
-        $this->assertSame($response['type'],"Conflict");
-        $this->assertSame($response['code'],409);
-        $this->em->remove($chamber);
-        $this->em->flush();
+        $this->assertSame($response['type'],"Error");
+        $this->assertSame($response['code'],502);
+
 
     }
     public function testNotFound() : void
     {
 
         $data = [
-            "number"=>67
+            "number"=>673
         ];
         $response = $this->chamberService->update(0,json_encode($data));
         $this->assertArrayHasKey('type',$response);
         $this->assertArrayHasKey('code',$response);
         $this->assertArrayHasKey('message',$response);
-        $this->assertSame($response['type'],"Not found");
-        $this->assertSame($response['code'],404);
+        $this->assertSame($response['type'],"Error");
+        $this->assertSame($response['code'],502);
 
     }
 
