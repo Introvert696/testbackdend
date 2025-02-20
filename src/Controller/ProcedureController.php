@@ -3,7 +3,12 @@
 namespace App\Controller;
 
 use App\DTO\ResponseDTO;
-use App\Services\ProceduresService;
+use App\Repository\ProcedureListRepository;
+use App\Repository\ProceduresRepository;
+use App\Services\AdaptersService;
+use App\Services\ResponseHelper;
+use App\Services\ValidateService;
+use Doctrine\ORM\EntityManagerInterface;
 use OpenApi\Attributes as OA;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -41,9 +46,18 @@ final class ProcedureController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Procedure")]
-    public function index(ProceduresService $proceduresService): JsonResponse
+    public function index(
+        ProceduresRepository $proceduresRepository,
+        ResponseHelper $responseHelper,
+    ): JsonResponse
     {
-        return $this->json($proceduresService->all());
+        $procedures = $proceduresRepository->findAll();
+        $response = $responseHelper->generate(
+            'OK',
+            200,
+            'procedures',
+            $procedures);
+        return $this->json($response);
     }
     #[Route('/{id}', name: 'show_procedure',methods: ['GET'])]
     #[OA\Response(
@@ -101,9 +115,46 @@ final class ProcedureController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Procedure")]
-    public function show(ProceduresService $proceduresService,$id): JsonResponse
+    public function show(
+        $id,
+        ProceduresRepository $proceduresRepository,
+        ResponseHelper $responseHelper,
+        AdaptersService $adaptersService,
+        ProcedureListRepository $procedureListRepository
+    ): JsonResponse
     {
-        $response = $proceduresService->about($id);
+        $procedure = $proceduresRepository->find($id);
+        if(!$procedure){
+            $response = $responseHelper->generate(
+                'Not found',
+                404,
+                'Procedure not found');
+            return $this->json($response,$response['code']);
+        }
+        $procedureResponse = $adaptersService
+            ->procedureToProcedureResponseDTO($procedure);
+        $entities = $procedureListRepository->findBy([
+            'source_id'=>$procedure->getId(),
+            'status' => 1
+        ]);
+        if(!$entities){
+            $response = $responseHelper->generate(
+                'OK',
+                200,
+                'Procedure ingo',
+                $procedureResponse);
+            return $this->json($response,$response['code']);
+        }
+        foreach ($entities as $et){
+            $procedureResponse->addEntity(
+                $adaptersService->procListToProcListRespDTO($et)
+            );
+        }
+        $response = $responseHelper->generate(
+            'OK',
+            200,
+            'about procedure info',
+            $procedureResponse);
         return $this->json($response,$response['code']);
     }
     #[Route( name: 'store_procedure',methods: ['POST'])]
@@ -170,11 +221,43 @@ final class ProcedureController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Procedure")]
-    public function store(Request $request,ProceduresService $proceduresService): JsonResponse
+    public function store(
+        Request $request,
+        ProceduresRepository $proceduresRepository,
+        ValidateService $validateService,
+        ResponseHelper $responseHelper,
+        EntityManagerInterface $em
+    ): JsonResponse
     {
-        $response = $proceduresService->store(
-            $request->getContent()
+        $data = $request->getContent();
+        $data = $validateService->procedures($responseHelper->checkData($data,'App\Entity\Procedures')
         );
+        if(!$data){
+            $response = $responseHelper->generate(
+                'Error',
+                422,
+                'check your fields');
+            return $this->json($response,$response['code']);
+        }
+        $issetProcedure = $proceduresRepository->findBy([
+            'title' => $data->getTitle()
+        ]);
+        if($issetProcedure){
+            $response = $responseHelper->generate(
+                'Conflict',
+                409,
+                'title has exists',
+                $responseHelper->first($issetProcedure));
+            return $this->json($response,$response['code']);
+        }
+        $em->persist($data);
+        $em->flush();
+
+        $response = $responseHelper->generate(
+            'create',
+            200,
+            'Procedure has been create',
+            $data);
         return $this->json($response,$response['code']);
     }
     #[Route('/{id}', name: 'update_procedure',methods: ['PATCH'])]
@@ -201,8 +284,6 @@ final class ProcedureController extends AbstractController
                 "type"=>"Not found",
                 "code"=>404,
                 "message" => "Procedure not found",
-
-
             ]
         ),
     )]
@@ -225,12 +306,43 @@ final class ProcedureController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Procedure")]
-    public function update(Request $request,ProceduresService $proceduresService,$id): JsonResponse
+    public function update(
+        Request $request,
+        $id,
+        ProceduresRepository $proceduresRepository,
+        ResponseHelper $responseHelper,
+        ValidateService $validateService,
+        EntityManagerInterface $em
+    ): JsonResponse
     {
-        $response = $proceduresService->update(
-            $id,
-            $request->getContent()
+        $data = $request->getContent();
+        $procedure = $proceduresRepository->find($id);
+        if(!$procedure) {
+            $response = $responseHelper->generate(
+                'Not Found',
+                404,
+                'Procedure not found');
+            return $this->json($response,$response['code']);
+        }
+        $data = $validateService->procedures(
+            $responseHelper->checkData($data,'App\Entity\Procedures')
         );
+        if(!$data){
+            $response = $responseHelper->generate(
+                'Error',
+                422,
+                'Check your fields');
+            return $this->json($response,$response['code']);
+        }
+        $procedure->setTitle($data->getTitle());
+        $procedure->setDescription($data->getDescription());
+        $em->flush();
+
+        $response = $responseHelper->generate(
+            'Update',
+            200,
+            'Procedure has been updated',
+            $procedure);
         return $this->json($response,$response['code']);
     }
     #[Route('/{id}', name: 'delete_procedure',methods: ['DELETE'])]
@@ -263,9 +375,28 @@ final class ProcedureController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Procedure")]
-    public function delete(ProceduresService $proceduresService,$id): JsonResponse
+    public function delete(
+        ProceduresRepository $proceduresRepository,
+        ResponseHelper $responseHelper,
+        EntityManagerInterface $em,
+        $id
+    ): JsonResponse
     {
-        $response = $proceduresService->delete($id);
+        $procedure = $proceduresRepository->find($id);
+        if(!$procedure){
+            $response = $responseHelper->generate(
+                'Not Found',
+                404,
+                'Procedure not found');
+            return $this->json($response,$response['code']);
+        }
+        $em->remove($procedure);
+        $em->flush();
+
+        $response = $responseHelper->generate(
+            'Delete',
+            200,
+            'procedure has been delete');
         return $this->json($response,$response['code']);
     }
 }

@@ -20,8 +20,12 @@ jobs:
           --health-retries=3
 
     steps:
+      - name: Disable Caching
+        run: echo "CACHING_DISABLED=true" >> $GITHUB_ENV
+
       - name: Checkout code
         uses: actions/checkout@v4.2.2
+
       - name: Setup PHP
         uses: shivammathur/setup-php@2.32.0
         with:
@@ -33,6 +37,12 @@ jobs:
         run: |
           echo -e "APP_ENV=dev\nAPP_SECRET=30105fdbbfea30c5a09dfd3a095d5a23\nDATABASE_URL=postgresql://symfony:symfony@localhost:5432/symfony?serverVersion=14\nFIXTURE_RATE=300" > .env
           echo -e "KERNEL_CLASS='App\Kernel'\nAPP_SECRET='\$ecretf0rt3st'\nSYMFONY_DEPRECATIONS_HELPER=999999\nPANTHER_APP_ENV=panther\nPANTHER_ERROR_SCREENSHOT_DIR=./var/error-screenshots\nDATABASE_URL=postgresql://symfony:symfony@localhost:5432/symfony?serverVersion=14" > .env.test
+
+      - name: Clear Composer Cache
+        run: composer clear-cache
+
+      - name: Dump Autoload
+        run: composer dump-autoload
 
       - name: Install dependincies
         run: composer install --no-progress --prefer-dist --optimize-autoloader

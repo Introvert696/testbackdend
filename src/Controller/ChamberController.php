@@ -2,8 +2,14 @@
 
 namespace App\Controller;
 
+use App\DTO\ChamberResponseDTO;
 use App\DTO\ResponseDTO;
-use App\Services\ChambersService;
+use App\Repository\ChambersRepository;
+use App\Repository\ProcedureListRepository;
+use App\Services\AdaptersService;
+use App\Services\ResponseHelper;
+use App\Services\ValidateService;
+use Doctrine\ORM\EntityManagerInterface;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -14,11 +20,6 @@ use OpenApi\Attributes as OA;
 #[Route('/api/chambers')]
 final class ChamberController extends AbstractController
 {
-    public function __construct(
-        private readonly ChambersService $chambersService
-    )
-    {}
-
     #[Route('/', name: 'index_chambers', methods: ["GET"])]
     #[OA\Response(
             response: 200,
@@ -44,10 +45,15 @@ final class ChamberController extends AbstractController
         )
     )]
     #[OA\Tag(name:"Chamber")]
-    public function index(): JsonResponse
+    public function index(ChambersRepository $chambersRepository,ResponseHelper $responseHelper): JsonResponse
     {
-        $response = $this->chambersService->all();
-        return $this->json($response);
+        $chambers = $chambersRepository->findAll();
+        $data = $responseHelper->generate(
+            'Ok',
+            ResponseHelper::STATUS_OK,
+            'Chambers',
+            $chambers);
+        return $this->json($data);
     }
     #[Route('/{id}', name: 'show_chambers', methods: ["GET"])]
     #[OA\Response(
@@ -82,10 +88,33 @@ final class ChamberController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Chamber")]
-    public function show(int $id): JsonResponse
+    public function show(int $id,ChambersRepository $chambersRepository, ResponseHelper $responseHelper): JsonResponse
     {
-        $response = $this->chambersService->get($id);
-       return $this->json($response,$response['code']);
+        $chamberResponse = new ChamberResponseDTO();
+        $patients = [];
+        $chamber = $chambersRepository->find($id);
+        if(!$chamber){
+            $data =  $responseHelper->generate(
+                'Not found',
+                ResponseHelper::STATUS_NOT_FOUND,
+                'Chamber not found');
+            return $this->json($data,$data['code']);
+        }
+        $chamberPatients = $chamber->getChambersPatients()->getValues();
+        if($chamberPatients){
+            foreach ($chamberPatients as $cp){
+                $patients[] = $cp->getPatients();
+            }
+            $chamberResponse->setPatients($patients);
+        }
+        $chamberResponse->setId($chamber->getId());
+        $chamberResponse->setNumber($chamber->getNumber());
+        $data = $responseHelper->generate(
+            'Ok',
+            ResponseHelper::STATUS_OK,
+            'Chamber and he patients',
+            $chamberResponse);
+       return $this->json($data,$data['code']);
     }
 
     #[Route('/{id}/procedures', name: 'show_chambers_procedures', methods: ["GET"])]
@@ -137,10 +166,35 @@ final class ChamberController extends AbstractController
             ]
         ),
     )]
-    public function showProcedures(int $id): JsonResponse
+    public function showProcedures(
+        int $id,
+        ProcedureListRepository $procedureListRepository,
+        AdaptersService $adaptersService,
+        ResponseHelper $responseHelper
+    ): JsonResponse
     {
-        $response = $this->chambersService->getProcedure($id);
-        return $this->json($response,$response['code']);
+        $data = [];
+        $procList = $procedureListRepository->findBy([
+            'source_type'=>'chambers',
+            'source_id'=>$id
+        ]);
+        foreach ($procList as $pl){
+            $data[] = $adaptersService
+                ->procedureListToChamberProcedureDTO($pl);
+        }
+        if(!$data){
+            $data = $responseHelper->generate(
+                'Not Found',
+                ResponseHelper::STATUS_NOT_FOUND,
+                'Procedures not found');
+            return $this->json($data,$data['code']);
+        }
+        $data = $responseHelper->generate(
+            'Ok',
+            ResponseHelper::STATUS_OK,
+            'Procedures, chamber - '.$id ,
+            $data);
+        return $this->json($data,$data['code']);
     }
     #[Route('/{id}/procedures', name: 'update_chambers_procedures', methods: ["POST"])]
     #[OA\RequestBody(
@@ -207,12 +261,71 @@ final class ChamberController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Chamber")]
-    public function updateProcedures(Request $request, int $id): JsonResponse
+    public function updateProcedures(
+        Request $request,
+        int $id,
+        ChambersRepository $chambersRepository,
+        ResponseHelper $responseHelper,
+        ProcedureListRepository $procedureListRepository,
+        EntityManagerInterface $em,
+        ValidateService $validateService,
+        AdaptersService $adaptersService): JsonResponse
     {
-        $response = $this->chambersService->addProcedure(
-            $id,$request->getContent()
-        );
-        return $this->json($response,$response['code']);
+        $data = $request->getContent();
+
+        $procedures = [];
+        $chamber = $chambersRepository->find($id);
+        $data = $responseHelper->checkData($data,'App\DTO\ProcListDTO[]');
+        $procedureLists = $procedureListRepository->findBy([
+            'source_type' => 'chambers',
+            'source_id' => $id
+        ]);
+        if (!$chamber) {
+            $data = $responseHelper->generate(
+                'Not found',
+                ResponseHelper::STATUS_NOT_FOUND,
+                'Chamber not found'
+            );
+            return $this->json($data,$data['code']);
+        }
+        if(!$data ){
+            $data = $responseHelper->generate(
+                'Error',
+                ResponseHelper::STATUS_NOT_VALID_BODY,
+                'Validate error'
+            );
+            return $this->json($data,$data['code']);
+        }
+        if($procedureLists){
+            foreach ($procedureLists as $pl){
+                $em->remove($pl);
+            }
+        }
+        foreach($data as $d){
+            $proc = $validateService
+                ->procedureListWithProcedure($d);
+            if(!$proc){
+                $data = $responseHelper->generate(
+                    'Not Valid',
+                    ResponseHelper::STATUS_NOT_VALID_BODY,
+                    'Procedure not valid');
+                return $this->json($data,$data['code']);
+            }
+            $procList = $adaptersService
+                ->procListDtoToProcList($proc,$id);
+            $em->persist($procList);
+            $procedures[] = $adaptersService
+                ->procedureListToChamberProcedureDto($procList);
+        }
+        $em->flush();
+
+        $data = $responseHelper->generate(
+            'Update',
+            ResponseHelper::STATUS_OK,
+            'Chambers procedure has been update',
+            $procedures);
+
+        return $this->json($data,$data['code']);
     }
     #[Route(name: 'store_chambers', methods: ["POST"])]
     #[OA\RequestBody(
@@ -278,11 +391,45 @@ final class ChamberController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Chamber")]
-    public function store(Request $request): JsonResponse
+    public function store(
+        Request $request,
+        ValidateService $validateService,
+        ResponseHelper $responseHelper,
+        ChambersRepository $chambersRepository,
+        EntityManagerInterface $em
+    ): JsonResponse
     {
-        $response = $this->chambersService->create(
-            $request->getContent()
+        $data = $request->getContent();
+        $data = $validateService->chambersRequestData(
+            $responseHelper->checkData($data,'App\Entity\Chambers')
         );
+        if(!$data){
+            $response =  $responseHelper->generate(
+                'Error',
+                ResponseHelper::STATUS_NOT_VALID_BODY,
+                'Check request body');
+
+            return $this->json($response,$response['code']);
+        }
+        $chamber = $chambersRepository->findBy([
+            'number' =>$data->getNumber()
+        ]);
+        if($chamber){
+            $response = $responseHelper->generate(
+                'Conflict',
+                ResponseHelper::STATUS_CONFLICT,
+                'Chamber is exists',
+                $responseHelper->first($chamber));
+            return $this->json($response,$response['code']);
+        }
+        $em->persist($data);
+        $em->flush();
+
+        $response = $responseHelper->generate(
+            'Create',
+            ResponseHelper::STATUS_OK,
+            'Chamber has been create',
+            $data);
         return $this->json($response,$response['code']);
     }
     #[Route('/{id}', name: 'update_chambers', methods: ["PATCH"])]
@@ -328,12 +475,45 @@ final class ChamberController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Chamber")]
-    public function update(Request $request,int|null $id): JsonResponse
+    public function update(
+        Request $request,
+        int|null $id,
+        ResponseHelper $responseHelper,
+        ChambersRepository $chambersRepository,
+        EntityManagerInterface $em,
+    ): JsonResponse
     {
-        $response = $this->chambersService->update(
-            $id,
-            $request->getContent()
+        $data = $request->getContent();
+        $data = $responseHelper->checkData($data,'App\Entity\Chambers');
+        $chamber = $chambersRepository->find($id);
+        $valid = ( (!$data) or
+            (gettype($data->getNumber())!=="integer") or
+            $chambersRepository->findBy([
+                'number'=>$data->getNumber()
+            ])
         );
+        if(!$chamber){
+            $response = $responseHelper->generate(
+                'Not found',
+                ResponseHelper::STATUS_NOT_FOUND,
+                'Chamber not found');
+            return $this->json($response,$response['code']);
+        }
+        if($valid){
+            $response = $responseHelper->generate(
+                'Error',
+                ResponseHelper::STATUS_NOT_VALID_BODY,
+                'Check request body');
+            return $this->json($response,$response['code']);
+        }
+        $chamber->setNumber($data->getNumber());
+        $em->flush();
+
+        $response = $responseHelper->generate(
+            'Updated',
+            ResponseHelper::STATUS_OK,
+            'Chamber has been updated',
+            $chamber);
         return $this->json($response,$response['code']);
     }
 
@@ -365,9 +545,46 @@ final class ChamberController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Chamber")]
-    public function delete(int|null $id): JsonResponse
+    public function delete(
+        int|null $id,
+        ChambersRepository $chambersRepository,
+        ResponseHelper $responseHelper,
+        EntityManagerInterface $em,
+        ProcedureListRepository $procedureListRepository,
+    ): JsonResponse
     {
-        $response = $this->chambersService->delete($id);
+
+        $chamber= $chambersRepository->find($id);
+        if(!$chamber){
+            $response = $responseHelper->generate(
+                'Not found',
+                ResponseHelper::STATUS_NOT_FOUND,
+                'Chamber '.$id.' - not found');
+            return $this->json($response,$response['code']);
+        }
+        $chamberPatient = $chamber->getChambersPatients()->getValues();
+        if($chamberPatient){
+            foreach ($chamberPatient as $cp)
+            {
+                $em->remove($cp);
+            }
+        }
+        $procedureLists = $procedureListRepository->findBy([
+            'source_id' => $chamber->getId(),
+            'source_type' => 'chambers'
+        ]);
+        if($procedureLists){
+            foreach ($procedureLists as $pl){
+                $em->remove($pl);
+            }
+        }
+        $em->remove($chamber);
+        $em->flush();
+
+        $response = $responseHelper->generate(
+            'Delete',
+            ResponseHelper::STATUS_OK,
+            'chamber '.$id.' has been delete');
         return $this->json($response,$response['code']);
     }
 }
