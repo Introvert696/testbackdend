@@ -19,6 +19,13 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/api/procedures')]
 final class ProcedureController extends AbstractController
 {
+    public function __construct(
+        private readonly ResponseHelper $responseHelper,
+        private readonly ProceduresRepository $proceduresRepository,
+        private readonly EntityManagerInterface $em,
+        private readonly ValidateService $validateService,
+    ){}
+
     #[Route('/', name: 'index_procedure',methods: ['GET'])]
     #[OA\Response(
         response: 200,
@@ -46,15 +53,12 @@ final class ProcedureController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Procedure")]
-    public function index(
-        ProceduresRepository $proceduresRepository,
-        ResponseHelper $responseHelper,
-    ): JsonResponse
+    public function index(): JsonResponse
     {
-        $procedures = $proceduresRepository->findAll();
-        $response = $responseHelper->generate(
+        $procedures = $this->proceduresRepository->findAll();
+        $response = $this->responseHelper->generate(
             'OK',
-            200,
+            $this->responseHelper::STATUS_OK,
             'procedures',
             $procedures);
         return $this->json($response);
@@ -109,25 +113,21 @@ final class ProcedureController extends AbstractController
                 "type"=>"Not found",
                 "code"=>404,
                 "message" => "Procedure not found",
-
-
             ]
         ),
     )]
     #[OA\Tag(name:"Procedure")]
     public function show(
         $id,
-        ProceduresRepository $proceduresRepository,
-        ResponseHelper $responseHelper,
         AdaptersService $adaptersService,
         ProcedureListRepository $procedureListRepository
     ): JsonResponse
     {
-        $procedure = $proceduresRepository->find($id);
+        $procedure = $this->proceduresRepository->find($id);
         if(!$procedure){
-            $response = $responseHelper->generate(
+            $response = $this->responseHelper->generate(
                 'Not found',
-                404,
+                $this->responseHelper::STATUS_NOT_FOUND,
                 'Procedure not found');
             return $this->json($response,$response['code']);
         }
@@ -138,9 +138,9 @@ final class ProcedureController extends AbstractController
             'status' => 1
         ]);
         if(!$entities){
-            $response = $responseHelper->generate(
+            $response = $this->responseHelper->generate(
                 'OK',
-                200,
+                $this->responseHelper::STATUS_OK,
                 'Procedure ingo',
                 $procedureResponse);
             return $this->json($response,$response['code']);
@@ -150,9 +150,9 @@ final class ProcedureController extends AbstractController
                 $adaptersService->procListToProcListRespDTO($et)
             );
         }
-        $response = $responseHelper->generate(
+        $response = $this->responseHelper->generate(
             'OK',
-            200,
+            $this->responseHelper::STATUS_OK,
             'about procedure info',
             $procedureResponse);
         return $this->json($response,$response['code']);
@@ -221,41 +221,35 @@ final class ProcedureController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Procedure")]
-    public function store(
-        Request $request,
-        ProceduresRepository $proceduresRepository,
-        ValidateService $validateService,
-        ResponseHelper $responseHelper,
-        EntityManagerInterface $em
-    ): JsonResponse
+    public function store(Request $request): JsonResponse
     {
         $data = $request->getContent();
-        $data = $validateService->procedures($responseHelper->checkData($data,'App\Entity\Procedures')
+        $data = $this->validateService->procedures($this->responseHelper->checkData($data,'App\Entity\Procedures')
         );
         if(!$data){
-            $response = $responseHelper->generate(
+            $response = $this->responseHelper->generate(
                 'Error',
-                422,
+                $this->responseHelper::STATUS_NOT_VALID_FIELDS,
                 'check your fields');
             return $this->json($response,$response['code']);
         }
-        $issetProcedure = $proceduresRepository->findBy([
+        $issetProcedure = $this->proceduresRepository->findBy([
             'title' => $data->getTitle()
         ]);
         if($issetProcedure){
-            $response = $responseHelper->generate(
+            $response = $this->responseHelper->generate(
                 'Conflict',
-                409,
+                $this->responseHelper::STATUS_CONFLICT,
                 'title has exists',
-                $responseHelper->first($issetProcedure));
+                $this->responseHelper->first($issetProcedure));
             return $this->json($response,$response['code']);
         }
-        $em->persist($data);
-        $em->flush();
+        $this->em->persist($data);
+        $this->em->flush();
 
-        $response = $responseHelper->generate(
+        $response = $this->responseHelper->generate(
             'create',
-            200,
+            $this->responseHelper::STATUS_OK,
             'Procedure has been create',
             $data);
         return $this->json($response,$response['code']);
@@ -306,41 +300,34 @@ final class ProcedureController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Procedure")]
-    public function update(
-        Request $request,
-        $id,
-        ProceduresRepository $proceduresRepository,
-        ResponseHelper $responseHelper,
-        ValidateService $validateService,
-        EntityManagerInterface $em
-    ): JsonResponse
+    public function update(Request $request,$id,): JsonResponse
     {
         $data = $request->getContent();
-        $procedure = $proceduresRepository->find($id);
+        $procedure = $this->proceduresRepository->find($id);
         if(!$procedure) {
-            $response = $responseHelper->generate(
+            $response = $this->responseHelper->generate(
                 'Not Found',
-                404,
+                $this->responseHelper::STATUS_NOT_FOUND,
                 'Procedure not found');
             return $this->json($response,$response['code']);
         }
-        $data = $validateService->procedures(
-            $responseHelper->checkData($data,'App\Entity\Procedures')
+        $data = $this->validateService->procedures(
+            $this->responseHelper->checkData($data,'App\Entity\Procedures')
         );
         if(!$data){
-            $response = $responseHelper->generate(
+            $response = $this->responseHelper->generate(
                 'Error',
-                422,
+                $this->responseHelper::STATUS_NOT_VALID_FIELDS,
                 'Check your fields');
             return $this->json($response,$response['code']);
         }
         $procedure->setTitle($data->getTitle());
         $procedure->setDescription($data->getDescription());
-        $em->flush();
+        $this->em->flush();
 
-        $response = $responseHelper->generate(
+        $response = $this->responseHelper->generate(
             'Update',
-            200,
+            $this->responseHelper::STATUS_OK,
             'Procedure has been updated',
             $procedure);
         return $this->json($response,$response['code']);
@@ -356,8 +343,6 @@ final class ProcedureController extends AbstractController
                 "type"=>"Not found",
                 "code"=>404,
                 "message" => "Procedure not found",
-
-
             ]
         ),
     )]
@@ -375,27 +360,22 @@ final class ProcedureController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Procedure")]
-    public function delete(
-        ProceduresRepository $proceduresRepository,
-        ResponseHelper $responseHelper,
-        EntityManagerInterface $em,
-        $id
-    ): JsonResponse
+    public function delete($id): JsonResponse
     {
-        $procedure = $proceduresRepository->find($id);
+        $procedure = $this->proceduresRepository->find($id);
         if(!$procedure){
-            $response = $responseHelper->generate(
+            $response = $this->responseHelper->generate(
                 'Not Found',
-                404,
+                $this->responseHelper::STATUS_NOT_FOUND,
                 'Procedure not found');
             return $this->json($response,$response['code']);
         }
-        $em->remove($procedure);
-        $em->flush();
+        $this->em->remove($procedure);
+        $this->em->flush();
 
-        $response = $responseHelper->generate(
+        $response = $this->responseHelper->generate(
             'Delete',
-            200,
+            $this->responseHelper::STATUS_OK,
             'procedure has been delete');
         return $this->json($response,$response['code']);
     }

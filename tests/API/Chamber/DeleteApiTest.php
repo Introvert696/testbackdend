@@ -3,6 +3,7 @@
 namespace App\Tests\API\Chamber;
 
 use App\Tests\Factory\ChamberFactory;
+use http\Env\Response;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 class DeleteApiTest extends WebTestCase
@@ -33,6 +34,4 @@ class DeleteApiTest extends WebTestCase
         $this->assertResponseStatusCodeSame(404);
         $this->assertJson($client->getResponse()->getContent());
     }
-
-
 }

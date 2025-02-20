@@ -45,8 +45,8 @@ class UpdateApiTest extends WebTestCase
         ], content: $data);
         $this->assertJson($client->getResponse()->getContent());
 
-        if($client->getResponse()->getStatusCode()===422){
-            $this->assertResponseStatusCodeSame(422);
+        if($client->getResponse()->getStatusCode()===402){
+            $this->assertResponseStatusCodeSame(402);
         }
         else if ($client->getResponse()->getStatusCode()===404){
             $this->assertResponseStatusCodeSame(404);

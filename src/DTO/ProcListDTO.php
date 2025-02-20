@@ -7,17 +7,17 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 class ProcListDTO
 {
-
+#[Assert\NotBlank]
 public ?int $id=null;
-
+#[Assert\NotBlank]
 public ?int $procedure_id=null;
 #[Assert\NotBlank]
 public ?int $queue=null;
-
+#[Assert\NotBlank]
 public ?bool $status=null;
-
+#[Assert\NotBlank]
 public ?string $source_type=null;
-
+#[Assert\NotBlank]
 public ?int $source_id=null;
 
     public function getProclistId(): ?int

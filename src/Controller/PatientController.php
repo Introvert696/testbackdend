@@ -22,9 +22,12 @@ use Symfony\Component\Routing\Attribute\Route;
 final class PatientController extends AbstractController
 {
     public function __construct(
+       private readonly ResponseHelper $responseHelper,
+       private readonly EntityManagerInterface $em,
+       private readonly PatientsRepository $patientsRepository,
+       private readonly ProcedureListRepository $procedureListRepository,
+       private readonly AdaptersService $adaptersService
     ){}
-
-
     #[Route('/',name:'index_patients',methods: ['GET'])]
     #[OA\Response(
         response: 200,
@@ -52,16 +55,13 @@ final class PatientController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Patient")]
-    public function index(
-        ResponseHelper $responseHelper,
-        PatientsRepository $patientsRepository,
-    ): JsonResponse
+    public function index(): JsonResponse
     {
-        $response = $responseHelper->generate(
+        $response = $this->responseHelper->generate(
             'Ok',
             ResponseHelper::STATUS_OK,
             'return all patient',
-            $patientsRepository->findAll());
+            $this->patientsRepository->findAll());
         return $this->json($response);
     }
     #[Route('/{id}', name: 'show_patients', defaults: ['id'=>null], methods: ['GET'])]
@@ -104,32 +104,26 @@ final class PatientController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Patient")]
-    public function show(
-        int|null $id,
-        PatientsRepository $patientsRepository,
-        ProcedureListRepository $procedureListRepository,
-        ResponseHelper $responseHelper,
-        AdaptersService $adaptersService
-    ): JsonResponse
+    public function show(int|null $id,): JsonResponse
     {
-        $patient = $patientsRepository->find($id);
-        $procList = $procedureListRepository->findBy([
+        $patient = $this->patientsRepository->find($id);
+        $procList = $this->procedureListRepository->findBy([
             'source_type'=>'patients',
             'source_id'=>$id
         ]);
         if(!$patient){
-            $response = $responseHelper->generate(
+            $response = $this->responseHelper->generate(
                 'Not found',
                 ResponseHelper::STATUS_NOT_FOUND,
                 "Patient not found");
             return $this->json($response,$response['code']);
         }
-        $patient = $adaptersService->patientToPatientResponseDTO(
+        $patient = $this->adaptersService->patientToPatientResponseDTO(
             $patient,
             $procList
         );
 
-        $response = $responseHelper->generate(
+        $response = $this->responseHelper->generate(
             'Ok',
             ResponseHelper::STATUS_OK,
             "Patient info",
@@ -198,29 +192,26 @@ final class PatientController extends AbstractController
     #[OA\Tag(name:"Patient")]
     public function store(
         Request $request,
-        ResponseHelper $responseHelper,
         ValidateService $validateService,
-        EntityManagerInterface $em,
-        PatientsRepository $patientsRepository
     ): JsonResponse
     {
         $data = $request->getContent();
-        $data = $responseHelper
+        $data = $this->responseHelper
             ->checkData($data,'App\Entity\Patients');
-        $result = $patientsRepository->findBy([
+        $result = $this->patientsRepository->findBy([
             'card_number'=>$data?->getCardNumber()
         ]);
         if(!$data or !$validateService->patients($data) or $result){
-            $response = $responseHelper->generate(
+            $response = $this->responseHelper->generate(
                 'Error',
                 ResponseHelper::STATUS_NOT_VALID_BODY,
                 'Check body');
             return $this->json($response,$response['code']);
         }
-        $em->persist($data);
-        $em->flush();
+        $this->em->persist($data);
+        $this->em->flush();
 
-        $response = $responseHelper->generate(
+        $response = $this->responseHelper->generate(
             'Created',
             ResponseHelper::STATUS_OK,
             'patient has been created',
@@ -302,36 +293,32 @@ final class PatientController extends AbstractController
     public function update(
         Request $request,
         int|null $id,
-        ResponseHelper $responseHelper,
         ChambersRepository $chambersRepository,
-        PatientsRepository $patientsRepository,
         ChambersPatientsService $chambersPatientsService,
-        EntityManagerInterface $em,
-        AdaptersService $adaptersService
     ): JsonResponse
     {
         $data = $request->getContent();
-        $updatedData = $responseHelper
+        $updatedData = $this->responseHelper
             ->checkData($data,'App\DTO\PatientDTO');
-        $patient = $patientsRepository->find($id);
+        $patient = $this->patientsRepository->find($id);
         $chamber = $updatedData->chamber!=null?
             $chambersRepository->find($updatedData?->chamber):null;
         if(!$updatedData ){
-            $response = $responseHelper->generate(
+            $response = $this->responseHelper->generate(
                 'Error',
                 ResponseHelper::STATUS_NOT_VALID_FIELDS,
                 'Check you field');
             return $this->json($response,$response['code']);
         }
         if(!$patient){
-            $response = $responseHelper->generate(
+            $response = $this->responseHelper->generate(
                 'Not found',
                 ResponseHelper::STATUS_NOT_FOUND,
                 'Patient - not found');
             return $this->json($response,$response['code']);
         }
         if (!$chamber){
-            $response = $responseHelper->generate(
+            $response = $this->responseHelper->generate(
                 'Not found',
                 ResponseHelper::STATUS_NOT_FOUND,
                 'Patient - not found');
@@ -346,15 +333,15 @@ final class PatientController extends AbstractController
                 $patient,
                 $chamber
             );
-            $em->persist($chamberPatients);
+            $this->em->persist($chamberPatients);
         }
-        $em->flush();
+        $this->em->flush();
 
-        $response = $responseHelper->generate(
+        $response = $this->responseHelper->generate(
             'Updated',
             ResponseHelper::STATUS_OK,
             'Patient has been updated',
-            $adaptersService->patientToPatientResponseDTO($patient));
+            $this->adaptersService->patientToPatientResponseDTO($patient));
         return $this->json($response,$response['code']);
     }
     #[Route('/{id}', name: 'delete_patients', defaults: ['id'=>null], methods: ['DELETE'])]
@@ -385,34 +372,28 @@ final class PatientController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Patient")]
-    public function delete(
-        int|null $id,
-        PatientsRepository $patientsRepository,
-        ProcedureListRepository $procedureListRepository,
-        ResponseHelper $responseHelper,
-        EntityManagerInterface $em,
-    ): JsonResponse
+    public function delete(int|null $id): JsonResponse
     {
-        $patient = $patientsRepository->getMore($id);
-        $procedureList = $procedureListRepository->findBy([
+        $patient = $this->patientsRepository->getMore($id);
+        $procedureList = $this->procedureListRepository->findBy([
             'source_type' => 'patients',
             'source_id' => $id
         ]);
 
         if(!$patient){
-            $response = $responseHelper->generate(
+            $response = $this->responseHelper->generate(
                 'Not found',
                 ResponseHelper::STATUS_NOT_FOUND,
                 "Patient not found");
             return $this->json($response,$response['code']);
         }
         foreach ($procedureList as $pl){
-            $em->remove($pl);
+            $this->em->remove($pl);
         }
-        $em->remove($responseHelper->first($patient));
-        $em->flush();
+        $this->em->remove($this->responseHelper->first($patient));
+        $this->em->flush();
 
-        $response = $responseHelper->generate(
+        $response = $this->responseHelper->generate(
             'Ok',
             ResponseHelper::STATUS_OK,
             "Patient has been delete");

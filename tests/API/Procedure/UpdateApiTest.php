@@ -40,7 +40,7 @@ class UpdateApiTest extends WebTestCase
             "CONTENT_TYPE"=>"application/json"
         ], content: $data);
 
-        $this->assertResponseStatusCodeSame(422);
+        $this->assertResponseStatusCodeSame(402);
         $this->assertJson($client->getResponse()->getContent());
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Tests\API\Procedure;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\HttpFoundation\Response;
 
 class StoreApiTest extends WebTestCase
 {
@@ -40,7 +41,7 @@ class StoreApiTest extends WebTestCase
             "CONTENT_TYPE"=>"application/json"
         ], content: $data);
 
-        $this->assertResponseStatusCodeSame(422);
+        $this->assertResponseStatusCodeSame(402);
         $this->assertJson($client->getResponse()->getContent());
     }
 }
