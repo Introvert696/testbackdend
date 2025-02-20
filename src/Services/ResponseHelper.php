@@ -19,6 +19,7 @@ class ResponseHelper
     public function __construct(
         private readonly SerializerInterface $serializer,
     ){}
+
     public function generate(
         string $type,
         int $statusCode,

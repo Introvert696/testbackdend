@@ -14,8 +14,6 @@ use App\Repository\ProceduresRepository;
 
 class AdaptersService
 {
-
-
     public function __construct(
         private readonly ProceduresRepository $proceduresRepository,
         private readonly ValidateService $validator,

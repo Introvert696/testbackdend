@@ -40,7 +40,7 @@ class StoreApiTest extends WebTestCase
             "CONTENT_TYPE"=>"application/json"
         ], content: $data);
 
-        $this->assertResponseStatusCodeSame(502);
+        $this->assertResponseStatusCodeSame(402);
         $this->assertJson($client->getResponse()->getContent());
     }
 }

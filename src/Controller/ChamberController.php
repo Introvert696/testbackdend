@@ -7,6 +7,7 @@ use App\DTO\ResponseDTO;
 use App\Repository\ChambersRepository;
 use App\Repository\ProcedureListRepository;
 use App\Services\AdaptersService;
+use App\Services\ResponseFabric;
 use App\Services\ResponseHelper;
 use App\Services\ValidateService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -27,7 +28,8 @@ final class ChamberController extends AbstractController
         private readonly ProcedureListRepository $procedureListRepository,
         private readonly EntityManagerInterface $em,
         private readonly AdaptersService $adaptersService,
-        private readonly ValidateService $validateService
+        private readonly ValidateService $validateService,
+        private readonly ResponseFabric $responseFabric,
     ){}
     #[Route('/', name: 'index_chambers', methods: ["GET"])]
     #[OA\Response(
@@ -56,13 +58,8 @@ final class ChamberController extends AbstractController
     #[OA\Tag(name:"Chamber")]
     public function index(): JsonResponse
     {
-        $chambers = $this->chambersRepository->findAll();
-        $data = $this->responseHelper->generate(
-            'Ok',
-            ResponseHelper::STATUS_OK,
-            'Chambers',
-            $chambers);
-        return $this->json($data);
+        $response = $this->responseFabric->ok('Patient - not found',$this->chambersRepository->findAll());
+        return $this->json($response);
     }
     #[Route('/{id}', name: 'show_chambers',requirements: ['id'=>Requirement::DIGITS], methods: ["GET"])]
     #[OA\Response(
@@ -103,11 +100,8 @@ final class ChamberController extends AbstractController
         $patients = [];
         $chamber = $this->chambersRepository->find($id);
         if(!$chamber){
-            $data =  $this->responseHelper->generate(
-                'Not found',
-                ResponseHelper::STATUS_NOT_FOUND,
-                'Chamber not found');
-            return $this->json($data,$data['code']);
+            $response = $this->responseFabric->notFound('Chamber - not found');
+            return $this->json($response,$response['code']);
         }
         $chamberPatients = $chamber->getChambersPatients()->getValues();
         if($chamberPatients){
@@ -118,12 +112,9 @@ final class ChamberController extends AbstractController
         }
         $chamberResponse->setId($chamber->getId());
         $chamberResponse->setNumber($chamber->getNumber());
-        $data = $this->responseHelper->generate(
-            'Ok',
-            ResponseHelper::STATUS_OK,
-            'Chamber and he patients',
-            $chamberResponse);
-       return $this->json($data,$data['code']);
+        $response = $this->responseFabric->ok('Chamber info',$chamberResponse);
+
+       return $this->json($response,$response['code']);
     }
 
     #[Route('/{id}/procedures', name: 'show_chambers_procedures',requirements: ['id'=>Requirement::DIGITS], methods: ["GET"])]
@@ -186,18 +177,12 @@ final class ChamberController extends AbstractController
                 ->procedureListToChamberProcedureDTO($pl);
         }
         if(!$data){
-            $data = $this->responseHelper->generate(
-                'Not Found',
-                ResponseHelper::STATUS_NOT_FOUND,
-                'Procedures not found');
-            return $this->json($data,$data['code']);
+            $response = $this->responseFabric->notFound('Procedures not found');
+            return $this->json($response,$response['code']);
         }
-        $data = $this->responseHelper->generate(
-            'Ok',
-            ResponseHelper::STATUS_OK,
-            'Procedures, chamber - '.$id ,
-            $data);
-        return $this->json($data,$data['code']);
+        $response = $this->responseFabric->ok('Procedures, chamber - '.$id ,$data);
+
+        return $this->json($response,$response['code']);
     }
     #[Route('/{id}/procedures', name: 'update_chambers_procedures',requirements: ['id'=>Requirement::DIGITS], methods: ["POST"])]
     #[OA\RequestBody(
@@ -273,20 +258,12 @@ final class ChamberController extends AbstractController
             'source_id' => $id
         ]);
         if (!$chamber) {
-            $data = $this->responseHelper->generate(
-                'Not found',
-                ResponseHelper::STATUS_NOT_FOUND,
-                'Chamber not found'
-            );
-            return $this->json($data,$data['code']);
+            $response = $this->responseFabric->notFound('Chamber - not found');
+            return $this->json($response,$response['code']);
         }
         if(!$data ){
-            $data = $this->responseHelper->generate(
-                'Error',
-                ResponseHelper::STATUS_NOT_VALID_BODY,
-                'Validate error'
-            );
-            return $this->json($data,$data['code']);
+            $response = $this->responseFabric->notValid();
+            return $this->json($response,$response['code']);
         }
         if($procedureLists){
             foreach ($procedureLists as $pl){
@@ -297,11 +274,8 @@ final class ChamberController extends AbstractController
             $proc = $this->validateService
                 ->procedureListWithProcedure($d);
             if(!$proc){
-                $data = $this->responseHelper->generate(
-                    'Not Valid',
-                    ResponseHelper::STATUS_NOT_VALID_BODY,
-                    'Procedure not valid');
-                return $this->json($data,$data['code']);
+                $response = $this->responseFabric->notValid();
+                return $this->json($response,$response['code']);
             }
             $procList = $this->adaptersService
                 ->procListDtoToProcList($proc,$id);
@@ -310,14 +284,9 @@ final class ChamberController extends AbstractController
                 ->procedureListToChamberProcedureDto($procList);
         }
         $this->em->flush();
+        $response = $this->responseFabric->ok('Chambers procedure has been update',$procedures);
 
-        $data = $this->responseHelper->generate(
-            'Update',
-            ResponseHelper::STATUS_OK,
-            'Chambers procedure has been update',
-            $procedures);
-
-        return $this->json($data,$data['code']);
+        return $this->json($response,$response['code']);
     }
     #[Route(name: 'store_chambers', methods: ["POST"])]
     #[OA\RequestBody(
@@ -387,32 +356,20 @@ final class ChamberController extends AbstractController
             $this->responseHelper->checkData($data,'App\Entity\Chambers')
         );
         if(!$data){
-            $response =  $this->responseHelper->generate(
-                'Error',
-                ResponseHelper::STATUS_NOT_VALID_BODY,
-                'Check request body');
-
+            $response = $this->responseFabric->notValid();
             return $this->json($response,$response['code']);
         }
         $chamber = $this->chambersRepository->findBy([
             'number' =>$data->getNumber()
         ]);
         if($chamber){
-            $response = $this->responseHelper->generate(
-                'Conflict',
-                ResponseHelper::STATUS_CONFLICT,
-                'Chamber is exists',
-                $this->responseHelper->first($chamber));
+            $response = $this->responseFabric->conflict($this->responseHelper->first($chamber));
             return $this->json($response,$response['code']);
         }
         $this->em->persist($data);
         $this->em->flush();
+        $response = $this->responseFabric->ok('Chamber has been create',$data);
 
-        $response = $this->responseHelper->generate(
-            'Create',
-            ResponseHelper::STATUS_OK,
-            'Chamber has been create',
-            $data);
         return $this->json($response,$response['code']);
     }
     #[Route('/{id}', name: 'update_chambers', methods: ["PATCH"])]
@@ -470,27 +427,17 @@ final class ChamberController extends AbstractController
             ])
         );
         if(!$chamber){
-            $response = $this->responseHelper->generate(
-                'Not found',
-                ResponseHelper::STATUS_NOT_FOUND,
-                'Chamber not found');
+            $response = $this->responseFabric->notFound('Chamber - not found');
             return $this->json($response,$response['code']);
         }
         if($valid){
-            $response = $this->responseHelper->generate(
-                'Error',
-                ResponseHelper::STATUS_NOT_VALID_BODY,
-                'Check request body');
+            $response = $this->responseFabric->notValid();
             return $this->json($response,$response['code']);
         }
         $chamber->setNumber($data->getNumber());
         $this->em->flush();
+        $response = $this->responseFabric->ok('Chamber has been update');
 
-        $response = $this->responseHelper->generate(
-            'Updated',
-            ResponseHelper::STATUS_OK,
-            'Chamber has been updated',
-            $chamber);
         return $this->json($response,$response['code']);
     }
 
@@ -526,10 +473,7 @@ final class ChamberController extends AbstractController
     {
         $chamber= $this->chambersRepository->find($id);
         if(!$chamber){
-            $response = $this->responseHelper->generate(
-                'Not found',
-                ResponseHelper::STATUS_NOT_FOUND,
-                'Chamber '.$id.' - not found');
+            $response = $this->responseFabric->notFound('Chamber - not found');
             return $this->json($response,$response['code']);
         }
         $chamberPatient = $chamber->getChambersPatients()->getValues();
@@ -550,11 +494,7 @@ final class ChamberController extends AbstractController
         }
         $this->em->remove($chamber);
         $this->em->flush();
-
-        $response = $this->responseHelper->generate(
-            'Delete',
-            ResponseHelper::STATUS_OK,
-            'chamber '.$id.' has been delete');
+        $response = $this->responseFabric->ok('Chamber - has been delete');
         return $this->json($response,$response['code']);
     }
 }
