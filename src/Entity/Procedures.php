@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Ignore;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ProceduresRepository::class)]
 class Procedures
@@ -18,9 +19,13 @@ class Procedures
     private ?int $id = null;
 
     #[ORM\Column(length: 255,unique: true)]
+    #[Assert\NotBlank()]
+    #[Assert\Type('string')]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Assert\NotBlank()]
+    #[Assert\Type('string')]
     private ?string $description = null;
 
     /**

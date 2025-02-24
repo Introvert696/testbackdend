@@ -27,8 +27,6 @@ final class ProcedureController extends AbstractController
         private readonly ValidateService $validateService,
         private readonly ResponseFabric $responseFabric,
     ){}
-
-    #[Route('/', name: 'index_procedure',methods: ['GET'])]
     #[OA\Response(
         response: 200,
         description: 'Return all procedures',
@@ -55,13 +53,13 @@ final class ProcedureController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Procedure")]
+    #[Route('/', name: 'index_procedure',methods: ['GET'])]
     public function index(): JsonResponse
     {
         $procedures = $this->proceduresRepository->findAll();
         $response = $this->responseFabric->ok('All procedures',$procedures);
         return $this->json($response);
     }
-    #[Route('/{id}', name: 'show_procedure',methods: ['GET'])]
     #[OA\Response(
         response: 200,
         description: 'Return procedure info',
@@ -115,6 +113,7 @@ final class ProcedureController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Procedure")]
+    #[Route('/{id}', name: 'show_procedure',methods: ['GET'])]
     public function show(
         $id,
         AdaptersService $adaptersService,
@@ -132,10 +131,6 @@ final class ProcedureController extends AbstractController
             'source_id'=>$procedure->getId(),
             'status' => 1
         ]);
-//        if(!$entities){
-//            $response = $this->responseFabric->ok('Procedure info',$procedureResponse);
-//            return $this->json($response,$response['code']);
-//        }
         foreach ($entities as $et){
             $procedureResponse->addEntity(
                 $adaptersService->procListToProcListRespDTO($et)
@@ -144,7 +139,6 @@ final class ProcedureController extends AbstractController
         $response = $this->responseFabric->ok('Procedure info',$procedureResponse);
         return $this->json($response,$response['code']);
     }
-    #[Route( name: 'store_procedure',methods: ['POST'])]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -208,6 +202,7 @@ final class ProcedureController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Procedure")]
+    #[Route( name: 'store_procedure',methods: ['POST'])]
     public function store(Request $request): JsonResponse
     {
         $data = $request->getContent();
@@ -233,7 +228,6 @@ final class ProcedureController extends AbstractController
         $response = $this->responseFabric->ok('Procedure has been create',$data);
         return $this->json($response,$response['code']);
     }
-    #[Route('/{id}', name: 'update_procedure',methods: ['PATCH'])]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -279,16 +273,21 @@ final class ProcedureController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Procedure")]
+    #[Route('/{id}', name: 'update_procedure',methods: ['PATCH'])]
     public function update(Request $request,$id): JsonResponse
     {
-        $data = $request->getContent();
+        $content = $request->getContent();
         $procedure = $this->proceduresRepository->find($id);
         if(!$procedure) {
             $response = $this->responseFabric->notFound('Procedure not found');
             return $this->json($response,$response['code']);
         }
+        if(!$content){
+            $response = $this->responseFabric->notValid();
+            return $this->json($response,$response['code']);
+        }
         $data = $this->validateService->procedures(
-            $this->responseHelper->checkData($data,'App\Entity\Procedures')
+            $this->responseHelper->checkData($content,'App\Entity\Procedures')
         );
         if(!$data){
             $response = $this->responseFabric->notValid();
@@ -301,7 +300,6 @@ final class ProcedureController extends AbstractController
         $response = $this->responseFabric->ok('Procedure has been updated',$procedure);
         return $this->json($response,$response['code']);
     }
-    #[Route('/{id}', name: 'delete_procedure',methods: ['DELETE'])]
     #[OA\Response(
         response: 404,
         description: 'Procedure not found',
@@ -329,6 +327,7 @@ final class ProcedureController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Procedure")]
+    #[Route('/{id}', name: 'delete_procedure',methods: ['DELETE'])]
     public function delete($id): JsonResponse
     {
         $procedure = $this->proceduresRepository->find($id);

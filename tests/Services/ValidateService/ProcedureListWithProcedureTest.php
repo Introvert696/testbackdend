@@ -1,7 +1,7 @@
 <?php
 namespace App\Tests\Services\ValidateService;
 
-use App\DTO\ProcListDTO;
+use App\DTO\Chamber\ProcListDTO;
 use App\Tests\Services\BaseService;
 
 class ProcedureListWithProcedureTest extends BaseService
@@ -9,6 +9,7 @@ class ProcedureListWithProcedureTest extends BaseService
     public function testNotValid(): void
     {
         $procListDTO = new ProcListDTO();
+
         $result = $this->validateService->procedureListWithProcedure($procListDTO);
         $this->assertNull($result);
     }

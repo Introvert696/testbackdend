@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
-use App\DTO\ChamberProcedureDTO;
-use App\DTO\PatientResponseDTO;
-use App\DTO\ProcedureResponseDTO;
-use App\DTO\ProcListDTO;
-use App\DTO\ProcListRespDTO;
+use App\DTO\Adapter\ChamberProcedureDTO;
+use App\DTO\Adapter\PatientResponseDTO;
+use App\DTO\Adapter\ProcedureResponseDTO;
+use App\DTO\Adapter\ProcListRespDTO;
+use App\DTO\Chamber\ProcListDTO;
 use App\Entity\Patients;
 use App\Entity\ProcedureList;
 use App\Entity\Procedures;
@@ -51,11 +51,11 @@ class AdaptersService
     }
     public function procedureListToChamberProcedureDto(
         ProcedureList $procList
-    ): ChamberProcedureDTO|null
+    ): ChamberProcedureDTO|false
     {
         $pl = $this->validator->procedureList($procList);
         if(!$pl){
-            return null;
+            return false;
         }
         $procListDTO = new ChamberProcedureDTO();
         $procListDTO->setId($procList->getProcedures()->getId());
@@ -69,11 +69,11 @@ class AdaptersService
     public function procListDtoToProcList(
         ProcListDTO $procList,
         $id
-    ): ProcedureList|null
+    ): ProcedureList|false
     {
         $procList = $this->validator->procListDTO($procList);
         if(!$procList){
-            return null;
+            return false;
         }
         $procedure = $this->proceduresRepository->find($procList->getProcedureId());
         $procedureList = new ProcedureList();
@@ -87,12 +87,12 @@ class AdaptersService
     }
     public function procedureToProcedureResponseDTO(
         Procedures $procedures
-    ): ProcedureResponseDTO|null
+    ): ProcedureResponseDTO|false
     {
         $newProcResponse = new ProcedureResponseDTO();
         $procedures= $this->validator->procedures($procedures);
         if(!$procedures){
-            return null;
+            return false;
         }
         if($procedures->getId()){
             $newProcResponse->setId($procedures->getId());
@@ -104,11 +104,11 @@ class AdaptersService
     }
     public function procListToProcListRespDTO(
         ProcedureList $procList
-    ): ProcListRespDTO|null
+    ): ProcListRespDTO|false
     {
         $procList = $this->validator->procedureList($procList);
         if(!$procList){
-            return null;
+            return false;
         }
         $procListResp = new ProcListRespDTO();
         $procListResp->setStatus($procList->getStatus());

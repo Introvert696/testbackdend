@@ -12,13 +12,12 @@ class UpdateProcedureApiTest extends WebTestCase
     {
         $this->client = static::createClient();
     }
-
     public function testSuccessfulUpdate(): void
     {
         $client = $this->client;
         $data = [
             [
-                "procedure_id"=>5,
+                "procedure_id"=>8,
                 "queue"=>3,
                 "status"=>true
             ],

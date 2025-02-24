@@ -2,7 +2,7 @@
 
 namespace App\Controller;
 
-use App\DTO\ChamberResponseDTO;
+use App\DTO\Chamber\ChamberResponseDTO;
 use App\DTO\ResponseDTO;
 use App\Repository\ChambersRepository;
 use App\Repository\ProcedureListRepository;
@@ -12,11 +12,11 @@ use App\Services\ResponseHelper;
 use App\Services\ValidateService;
 use Doctrine\ORM\EntityManagerInterface;
 use Nelmio\ApiDocBundle\Attribute\Model;
+use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
-use OpenApi\Attributes as OA;
 use Symfony\Component\Routing\Requirement\Requirement;
 
 #[Route('/api/chambers')]
@@ -31,7 +31,6 @@ final class ChamberController extends AbstractController
         private readonly ValidateService $validateService,
         private readonly ResponseFabric $responseFabric,
     ){}
-    #[Route('/', name: 'index_chambers', methods: ["GET"])]
     #[OA\Response(
             response: 200,
             description: 'Return all chambers',
@@ -56,12 +55,13 @@ final class ChamberController extends AbstractController
         )
     )]
     #[OA\Tag(name:"Chamber")]
+    #[Route('/', name: 'index_chambers', methods: ["GET"])]
     public function index(): JsonResponse
     {
-        $response = $this->responseFabric->ok('Patient - not found',$this->chambersRepository->findAll());
+        $response = $this->responseFabric->ok('All chambers',$this->chambersRepository->findAll());
         return $this->json($response);
     }
-    #[Route('/{id}', name: 'show_chambers',requirements: ['id'=>Requirement::DIGITS], methods: ["GET"])]
+
     #[OA\Response(
         response: 200,
         description: 'Return all chambers',
@@ -94,6 +94,7 @@ final class ChamberController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Chamber")]
+    #[Route('/{id}', name: 'show_chambers',requirements: ['id'=>Requirement::DIGITS], methods: ["GET"])]
     public function show(int $id): JsonResponse
     {
         $chamberResponse = new ChamberResponseDTO();
@@ -101,6 +102,7 @@ final class ChamberController extends AbstractController
         $chamber = $this->chambersRepository->find($id);
         if(!$chamber){
             $response = $this->responseFabric->notFound('Chamber - not found');
+
             return $this->json($response,$response['code']);
         }
         $chamberPatients = $chamber->getChambersPatients()->getValues();
@@ -116,8 +118,6 @@ final class ChamberController extends AbstractController
 
        return $this->json($response,$response['code']);
     }
-
-    #[Route('/{id}/procedures', name: 'show_chambers_procedures',requirements: ['id'=>Requirement::DIGITS], methods: ["GET"])]
     #[OA\Response(
         response: 200,
         description: 'Return all chambers',
@@ -165,6 +165,7 @@ final class ChamberController extends AbstractController
             ]
         ),
     )]
+    #[Route('/{id}/procedures', name: 'show_chambers_procedures',requirements: ['id'=>Requirement::DIGITS], methods: ["GET"])]
     public function showProcedures(int $id): JsonResponse
     {
         $data = [];
@@ -184,7 +185,6 @@ final class ChamberController extends AbstractController
 
         return $this->json($response,$response['code']);
     }
-    #[Route('/{id}/procedures', name: 'update_chambers_procedures',requirements: ['id'=>Requirement::DIGITS], methods: ["POST"])]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -246,49 +246,50 @@ final class ChamberController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Chamber")]
+    #[Route('/{id}/procedures', name: 'update_chambers_procedures',requirements: ['id'=>Requirement::DIGITS], methods: ["POST"])]
     public function updateProcedures(Request $request, int $id): JsonResponse
     {
-        $data = $request->getContent();
-
         $procedures = [];
         $chamber = $this->chambersRepository->find($id);
-        $data = $this->responseHelper->checkData($data,'App\DTO\ProcListDTO[]');
+        $procListDTO = $this->responseHelper->checkData($request->getContent(), 'App\DTO\Chamber\ProcListDTO[]');
         $procedureLists = $this->procedureListRepository->findBy([
             'source_type' => 'chambers',
             'source_id' => $id
         ]);
         if (!$chamber) {
             $response = $this->responseFabric->notFound('Chamber - not found');
-            return $this->json($response,$response['code']);
+
+            return $this->json($response, $response['code']);
         }
-        if(!$data ){
+        if (!$procListDTO) {
             $response = $this->responseFabric->notValid();
-            return $this->json($response,$response['code']);
+
+            return $this->json($response, $response['code']);
         }
-        if($procedureLists){
-            foreach ($procedureLists as $pl){
+        if ($procedureLists) {
+            foreach ($procedureLists as $pl) {
                 $this->em->remove($pl);
             }
         }
-        foreach($data as $d){
+        foreach ($procListDTO as $d) {
             $proc = $this->validateService
                 ->procedureListWithProcedure($d);
-            if(!$proc){
+            if (!$proc) {
                 $response = $this->responseFabric->notValid();
-                return $this->json($response,$response['code']);
+
+                return $this->json($response, $response['code']);
             }
             $procList = $this->adaptersService
-                ->procListDtoToProcList($proc,$id);
+                ->procListDtoToProcList($proc, $id);
             $this->em->persist($procList);
             $procedures[] = $this->adaptersService
                 ->procedureListToChamberProcedureDto($procList);
         }
         $this->em->flush();
-        $response = $this->responseFabric->ok('Chambers procedure has been update',$procedures);
+        $response = $this->responseFabric->ok('Chambers procedure has been update', $procedures);
 
-        return $this->json($response,$response['code']);
+        return $this->json($response, $response['code']);
     }
-    #[Route(name: 'store_chambers', methods: ["POST"])]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -349,14 +350,14 @@ final class ChamberController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Chamber")]
+    #[Route(name: 'store_chambers', methods: ["POST"])]
     public function store(Request $request): JsonResponse
     {
-        $data = $request->getContent();
         $data = $this->validateService->chambersRequestData(
-            $this->responseHelper->checkData($data,'App\Entity\Chambers')
+            $this->responseHelper->checkData($request->getContent(),'App\Entity\Chambers')
         );
         if(!$data){
-            $response = $this->responseFabric->notValidgit ;
+            $response = $this->responseFabric->notValid();
             return $this->json($response,$response['code']);
         }
         $chamber = $this->chambersRepository->findBy([
@@ -372,7 +373,6 @@ final class ChamberController extends AbstractController
 
         return $this->json($response,$response['code']);
     }
-    #[Route('/{id}', name: 'update_chambers', methods: ["PATCH"])]
     #[OA\RequestBody(
       required: true,
         content: new OA\JsonContent(
@@ -415,10 +415,10 @@ final class ChamberController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Chamber")]
+    #[Route('/{id}', name: 'update_chambers', methods: ["PATCH"])]
     public function update(Request $request, int|null $id): JsonResponse
     {
-        $data = $request->getContent();
-        $data = $this->responseHelper->checkData($data,'App\Entity\Chambers');
+        $data = $this->responseHelper->checkData($request->getContent(),'App\Entity\Chambers');
         $chamber = $this->chambersRepository->find($id);
         $valid = ( (!$data) or
             (gettype($data->getNumber())!=="integer") or
@@ -440,8 +440,6 @@ final class ChamberController extends AbstractController
 
         return $this->json($response,$response['code']);
     }
-
-    #[Route('/{id}', name: 'delete_chambers', requirements: ['id'=>Requirement::DIGITS], methods: ["DELETE"])]
     #[OA\Response(
         response: 202,
         description: 'Return all chambers',
@@ -469,6 +467,7 @@ final class ChamberController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Chamber")]
+    #[Route('/{id}', name: 'delete_chambers', requirements: ['id'=>Requirement::DIGITS], methods: ["DELETE"])]
     public function delete(int $id): JsonResponse
     {
         $chamber= $this->chambersRepository->find($id);

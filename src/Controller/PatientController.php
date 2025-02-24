@@ -12,8 +12,8 @@ use App\Services\ResponseFabric;
 use App\Services\ResponseHelper;
 use App\Services\ValidateService;
 use Doctrine\ORM\EntityManagerInterface;
-use OpenApi\Attributes as OA;
 use Nelmio\ApiDocBundle\Attribute\Model;
+use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -30,7 +30,6 @@ final class PatientController extends AbstractController
         private readonly AdaptersService $adaptersService,
         private readonly ResponseFabric $responseFabric,
     ){}
-    #[Route('/',name:'index_patients',methods: ['GET'])]
     #[OA\Response(
         response: 200,
         description: 'Return all patient',
@@ -57,6 +56,7 @@ final class PatientController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Patient")]
+    #[Route('/',name:'index_patients',methods: ['GET'])]
     public function index(): JsonResponse
     {
         $response = $this->responseFabric->ok(
@@ -65,7 +65,6 @@ final class PatientController extends AbstractController
         );
         return $this->json($response);
     }
-    #[Route('/{id}', name: 'show_patients', defaults: ['id'=>null], methods: ['GET'])]
     #[OA\Response(
         response: 200,
         description: 'Return all patient',
@@ -105,6 +104,7 @@ final class PatientController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Patient")]
+    #[Route('/{id}', name: 'show_patients', defaults: ['id'=>null], methods: ['GET'])]
     public function show(int $id): JsonResponse
     {
         $patient = $this->patientsRepository->find($id);
@@ -124,7 +124,6 @@ final class PatientController extends AbstractController
 
         return $this->json($response,$response['code']);
     }
-    #[Route(name:'store_patients',methods: ['POST'])]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -183,6 +182,7 @@ final class PatientController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Patient")]
+    #[Route(name:'store_patients',methods: ['POST'])]
     public function store(
         Request $request,
         ValidateService $validateService,
@@ -204,7 +204,6 @@ final class PatientController extends AbstractController
 
         return $this->json($response,$response['code']);
     }
-    #[Route('/{id}', name: 'update_patients', defaults: ['id'=>null], methods: ['PATCH'])]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -276,6 +275,7 @@ final class PatientController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Patient")]
+    #[Route('/{id}', name: 'update_patients', defaults: ['id'=>null], methods: ['PATCH'])]
     public function update(
         Request $request,
         int $id,
@@ -285,7 +285,7 @@ final class PatientController extends AbstractController
     {
         $data = $request->getContent();
         $updatedData = $this->responseHelper
-            ->checkData($data,'App\DTO\PatientDTO');
+            ->checkData($data, 'App\DTO\Patients\PatientDTO');
         $patient = $this->patientsRepository->find($id);
         $chamber = $updatedData->chamber!=null?
             $chambersRepository->find($updatedData?->chamber):null;
@@ -319,7 +319,6 @@ final class PatientController extends AbstractController
         );
         return $this->json($response,$response['code']);
     }
-    #[Route('/{id}', name: 'delete_patients', defaults: ['id'=>null], methods: ['DELETE'])]
     #[OA\Response(
         response: 404,
         description: 'Patient not found',
@@ -347,6 +346,7 @@ final class PatientController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Patient")]
+    #[Route('/{id}', name: 'delete_patients', defaults: ['id'=>null], methods: ['DELETE'])]
     public function delete(int $id): JsonResponse
     {
         $patient = $this->patientsRepository->getMore($id);

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DTO;
+namespace App\DTO\Chamber;
 
 use App\Entity\Patients;
 use Nelmio\ApiDocBundle\Attribute\Model;

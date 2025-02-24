@@ -2,7 +2,7 @@
 
 namespace App\Tests\Services\AdaptersService;
 
-use App\DTO\ProcListDTO;
+use App\DTO\Chamber\ProcListDTO;
 use App\Tests\Services\BaseService;
 
 class ProcListDtoToProcListTest extends BaseService

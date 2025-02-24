@@ -2,7 +2,7 @@
 
 namespace App\Tests\Services\ValidateService;
 
-use App\DTO\ProcListDTO;
+use App\DTO\Chamber\ProcListDTO;
 use App\Tests\Services\BaseService;
 
 class ProcListDTOTest extends BaseService

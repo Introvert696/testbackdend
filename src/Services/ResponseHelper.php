@@ -5,6 +5,7 @@ namespace App\Services;
 use Symfony\Component\Serializer\Exception\NotEncodableValueException;
 use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 
 class ResponseHelper
@@ -18,36 +19,41 @@ class ResponseHelper
 
     public function __construct(
         private readonly SerializerInterface $serializer,
+        private readonly ValidatorInterface $validator
     ){}
 
     public function generate(
         string $type,
         int $statusCode,
         string $message,
-        array|object|null $data = null
+        array|object|false $data = false
     ): array
     {
         $response['type'] = $type;
         $response['code'] = $statusCode;
         $response['message'] = $message;
-        if($data != null){
+        if($data !== false){
             $response['data'] = $data;
         }
         return $response;
     }
-    public function first(array $data): object|null
+    public function first(array $data): object|false
     {
         if(empty($data)){
-            return null;
+            return false;
         }
         return $data[0];
     }
-    public function checkData($data,$class): object|array|null
+    public function checkData($data,$class): object|array|bool
     {
         try {
             $data = $this->serializer->deserialize($data,$class,'json');
+            $response = $this->validator->validate($data);
+            if(count($response)>0){
+                throw  new NotEncodableValueException();
+            }
         } catch (NotEncodableValueException|NotNormalizableValueException){
-            return null;
+            return false;
         }
 
         return $data;

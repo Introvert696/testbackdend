@@ -1,9 +1,8 @@
 <?php
 namespace App\Services;
 
-use App\DTO\ProcListDTO;
+use App\DTO\Chamber\ProcListDTO;
 use App\Entity\ProcedureList;
-use App\Entity\Procedures;
 use App\Repository\ProceduresRepository;
 
 class ValidateService
@@ -40,54 +39,53 @@ class ValidateService
             return null;
         }
     }
-    public function patients(object $data): object|null
+    public function patients(object $patient): object|false
     {
-        $res = (($data->getName()!==null) and
-                ($data->getCardNumber()!== null));
+        $res = (($patient->getName()!==null) and
+                ($patient->getCardNumber()!== null));
         if($res)
         {
-            return $data;
+            return $patient;
         } else {
-            return null;
+            return false;
         }
     }
-    public function procedureListWithProcedure(ProcListDTO $pc): ProcListDTO|null
+    public function procedureListWithProcedure(ProcListDTO $pc): ProcListDTO|bool
     {
-        if($pc->getProcedureId()){
-            $procedure = $this->proceduresRepository->find(
-                $pc->getProcedureId()
-            );
-        } else {
-            return null;
+
+        $procedure = $this->proceduresRepository->find($pc->getProcedureId());
+
+        if(!$procedure){
+            return false;
         }
         $res = (($pc->getProcedureId()!==null) and
                 ($pc->getQueue()!==null) and
-                ($pc->getStatus()!==null) and
-                ($procedure!==null));
+                ($pc->getStatus()!==null)
+        );
         if($res){
+
             return $pc;
         } else {
-            return null;
+            return false;
         }
     }
-    public function procedures(Procedures|null $data): Procedures|null
+    public function procedures(object $proc): object|bool
     {
-        $res = (($data !== null) and
-                ($data->getTitle()!==null) and
-                ($data->getDescription()!==null));
+        $res = (($proc->getTitle()!==null) and
+                ($proc->getDescription()!==null));
         if($res){
-            return $data;
+            return $proc;
         } else {
-            return null;
+            return false;
         }
     }
-    public function validate(mixed... $data): array|null
+    public function validate(mixed... $data): array|false
     {
         $result = [];
 
         for($i=0;$i<count($data);$i++){
             if(!$data[$i]){
-                $result[$i] = null;
+                $result[$i] = false;
             }
             else{
                 $result[$i] = $data[$i];
