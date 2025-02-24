@@ -356,7 +356,7 @@ final class ChamberController extends AbstractController
             $this->responseHelper->checkData($data,'App\Entity\Chambers')
         );
         if(!$data){
-            $response = $this->responseFabric->notValid();
+            $response = $this->responseFabric->notValidgit ;
             return $this->json($response,$response['code']);
         }
         $chamber = $this->chambersRepository->findBy([
