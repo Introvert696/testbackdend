@@ -9,9 +9,9 @@ use OpenApi\Attributes as OA;
 class ChamberResponseDTO
 {
     #[OA\Property(type: 'integer')]
-    public ?int $id=null;
+    public int $id;
     #[OA\Property(type: 'integer')]
-    public ?int $number=null;
+    public int $number;
     #[OA\Property(
         type: 'array',
         items: new OA\Items(
