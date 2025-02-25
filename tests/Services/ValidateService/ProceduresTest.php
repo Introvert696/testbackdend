@@ -10,7 +10,7 @@ class ProceduresTest extends BaseService
     {
         $procedure = new Procedures();
         $response = $this->validateService->procedures($procedure);
-        $this->assertNull($response);
+        $this->assertFalse($response);
     }
     public function testValid(): void
     {

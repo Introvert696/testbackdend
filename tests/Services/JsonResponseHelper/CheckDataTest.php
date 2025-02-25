@@ -33,7 +33,7 @@ class CheckDataTest extends BaseService
         $data = "asdfafasfasdf";
         $response =  $this->jsonResopnseHelper->checkData($data,$classname);
 
-        $this->assertNull($response);
+        $this->assertFalse($response);
     }
     public function testNotValidClass(): void
     {
@@ -42,7 +42,7 @@ class CheckDataTest extends BaseService
             "number"=> 228
         ];
         $response =  $this->jsonResopnseHelper->checkData(json_encode($data),$classname);
-        $this->assertNull($response);
+        $this->assertFalse($response);
     }
 
 }

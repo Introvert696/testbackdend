@@ -21,11 +21,11 @@ class AdaptersService
     public function patientToPatientResponseDTO(
         Patients $patients,
         $procList = null
-    ): PatientResponseDTO| null
+    ): PatientResponseDTO| bool
     {
         $patients = $this->validator->patients($patients);
         if(!$patients){
-            return null;
+            return false;
         }
         $patientResponse = new PatientResponseDTO();
         if($patients->getId()){

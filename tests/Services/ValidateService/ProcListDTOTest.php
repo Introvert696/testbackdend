@@ -24,6 +24,6 @@ class ProcListDTOTest extends BaseService
     {
         $procListDto = new ProcListDTO();
         $response = $this->validateService->procListDTO($procListDto);
-        $this->assertNull($response);
+        $this->assertFalse($response);
     }
 }

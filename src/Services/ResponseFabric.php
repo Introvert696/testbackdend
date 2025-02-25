@@ -20,7 +20,7 @@ class ResponseFabric
             'Ok',
             $this->responseHelper::STATUS_OK,
             $message,
-            $data);
+            $data??[]);
     }
     public function notValid(): array
     {

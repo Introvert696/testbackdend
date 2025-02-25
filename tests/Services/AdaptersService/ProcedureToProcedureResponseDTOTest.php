@@ -24,6 +24,6 @@ class ProcedureToProcedureResponseDTOTest extends BaseService
         $procedure = new Procedures();
         $procRespDTO = $this->adapterService->procedureToProcedureResponseDTO($procedure);
 
-        $this->assertNull($procRespDTO);
+        $this->assertFalse($procRespDTO);
     }
 }

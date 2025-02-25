@@ -11,7 +11,7 @@ class ProcedureListWithProcedureTest extends BaseService
         $procListDTO = new ProcListDTO();
 
         $result = $this->validateService->procedureListWithProcedure($procListDTO);
-        $this->assertNull($result);
+        $this->assertFalse($result);
     }
     public function testValid(): void
     {

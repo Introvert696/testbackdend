@@ -20,7 +20,7 @@ class FirstTest extends BaseService
         $data = [ ];
 
         $response = $this->jsonResopnseHelper->first($data);
-        $this->assertNull($response);
+        $this->assertFalse($response);
     }
 
 }

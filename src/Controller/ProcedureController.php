@@ -217,7 +217,6 @@ final class ProcedureController extends AbstractController
         $data = $this->validateService->procedures(
             $this->responseHelper->checkData($data,'App\Entity\Procedures')
         );
-
         if(!$data){
             $this->responseFabric->notValid();
         }

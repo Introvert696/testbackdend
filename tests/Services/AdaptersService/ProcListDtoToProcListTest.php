@@ -30,6 +30,6 @@ class ProcListDtoToProcListTest extends BaseService
     {
         $procListDto = new ProcListDTO();
         $procList = $this->adapterService->procListDtoToProcList($procListDto,1);
-        $this->assertNull($procList);
+        $this->assertFalse($procList);
     }
 }

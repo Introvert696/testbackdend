@@ -11,7 +11,7 @@ class ProcedureListTest extends BaseService
     {
         $procedureList = new ProcedureList();
         $response = $this->validateService->procedureList($procedureList);
-        $this->assertNull($response);
+        $this->assertFalse($response);
     }
     public function testValid(): void
     {

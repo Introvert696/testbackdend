@@ -9,13 +9,13 @@ class ProcListDTO
 {
 
 #[Assert\NotBlank]
-public int $procedure_id;
+public ?int $procedure_id = null;
 #[Assert\NotBlank]
-public int $queue;
+public ?int $queue = null;
 #[Assert\Type('bool')]
-public bool $status;
-public string $source_type;
-public int $source_id;
+public ?bool $status = null;
+public ?string $source_type = null;
+public ?int $source_id = null;
 
     public function getProclistId(): ?int
     {

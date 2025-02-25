@@ -11,7 +11,7 @@ class PatientsTest extends BaseService
     {
         $patients = new Patients();
         $result = $this->validateService->patients($patients);
-        $this->assertNull($result);
+        $this->assertFalse($result);
     }
 
     public function testValid(): void

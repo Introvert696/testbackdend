@@ -21,6 +21,6 @@ class ProcListToProcListRespDTOTest extends BaseService
     {
         $pl = new ProcedureList();
         $procRespDTO = $this->adapterService->procListToProcListRespDTO($pl);
-        $this->assertNull($procRespDTO);
+        $this->assertFalse($procRespDTO);
     }
 }

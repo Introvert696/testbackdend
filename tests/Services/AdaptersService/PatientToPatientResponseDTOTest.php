@@ -25,7 +25,7 @@ class PatientToPatientResponseDTOTest extends BaseService
     {
         $patient = new Patients();
         $patientResponse = $this->adapterService->patientToPatientResponseDTO($patient);
-        $this->assertNull($patientResponse);
+        $this->assertFalse($patientResponse);
     }
 
 }

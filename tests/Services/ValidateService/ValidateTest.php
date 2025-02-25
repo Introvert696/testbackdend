@@ -9,7 +9,7 @@ class ValidateTest extends BaseService
     public function testMain(): void
     {
         $result = $this->validateService->validate(null,["df"=>"dfd"]);
-       $this->assertNull($result[0]);
+       $this->assertFalse($result[0]);
        $this->assertNotNull($result[1]);
     }
 }

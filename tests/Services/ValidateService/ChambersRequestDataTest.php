@@ -11,7 +11,7 @@ class ChambersRequestDataTest extends BaseService
     {
         $data = new Chambers();
         $response = $this->validateService->chambersRequestData($data);
-        $this->assertNull($response);
+        $this->assertFalse($response);
     }
     public function testValid(): void
     {

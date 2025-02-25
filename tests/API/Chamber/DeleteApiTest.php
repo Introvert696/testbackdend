@@ -17,7 +17,7 @@ class DeleteApiTest extends WebTestCase
     {
         $em = static::getContainer()->get('doctrine.orm.entity_manager');
         $chamberFactory = new ChamberFactory($em);
-        $chamber = $chamberFactory->create(1894);
+        $chamber = $chamberFactory->create(22932);
 
         $client = $this->client;
         $client->request('DELETE','http://127.0.0.1:8000/api/chambers/'.$chamber->getId());

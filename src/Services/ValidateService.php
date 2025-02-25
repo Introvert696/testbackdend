@@ -10,13 +10,13 @@ class ValidateService
     public function __construct(
         private readonly ProceduresRepository $proceduresRepository,
     ){}
-    public function chambersRequestData(object|null $data): object|null
+    public function chambersRequestData(object|null $data): object|bool
     {
         if($data->getNumber()!==null)
             return $data;
-        return null;
+        return false;
     }
-    public function procedureList(ProcedureList $pl): ProcedureList|null
+    public function procedureList(ProcedureList $pl): ProcedureList|bool
     {
         $res =  (($pl->getProcedures()!==null) and
                 ($pl->getStatus()!==null) and
@@ -25,10 +25,10 @@ class ValidateService
         if($res){
             return $pl;
         } else {
-            return null;
+            return false;
         }
     }
-    public function procListDTO(ProcListDTO $pld): ProcListDTO|null
+    public function procListDTO(ProcListDTO $pld): ProcListDTO|bool
     {
         $res = (($pld->procedure_id!==null) and
                 ($pld->queue!==null) and
@@ -36,10 +36,10 @@ class ValidateService
         if($res){
             return $pld;
         } else {
-            return null;
+            return false;
         }
     }
-    public function patients(object $patient): object|false
+    public function patients(object $patient): object|bool
     {
         $res = (($patient->getName()!==null) and
                 ($patient->getCardNumber()!== null));
@@ -52,7 +52,10 @@ class ValidateService
     }
     public function procedureListWithProcedure(ProcListDTO $pc): ProcListDTO|bool
     {
-
+        if(!$pc->getProcedureId())
+        {
+            return false;
+        }
         $procedure = $this->proceduresRepository->find($pc->getProcedureId());
 
         if(!$procedure){
