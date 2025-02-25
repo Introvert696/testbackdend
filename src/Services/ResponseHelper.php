@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exception\ApiResponseException;
 use Symfony\Component\Serializer\Exception\NotEncodableValueException;
 use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -50,7 +51,7 @@ class ResponseHelper
             $data = $this->serializer->deserialize($data,$class,'json');
             $response = $this->validator->validate($data);
             if(count($response)>0){
-                throw  new NotEncodableValueException();
+                throw new ApiResponseException('Check body',code:self::STATUS_NOT_VALID_FIELDS,type:'Error');
             }
         } catch (NotEncodableValueException|NotNormalizableValueException){
             return false;

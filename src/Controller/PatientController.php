@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\DTO\ResponseDTO;
+use App\Exception\ApiResponseException;
 use App\Repository\ChambersRepository;
 use App\Repository\PatientsRepository;
 use App\Repository\ProcedureListRepository;
@@ -65,6 +66,10 @@ final class PatientController extends AbstractController
         );
         return $this->json($response);
     }
+
+    /**
+     * @throws ApiResponseException
+     */
     #[OA\Response(
         response: 200,
         description: 'Return all patient',
@@ -113,8 +118,7 @@ final class PatientController extends AbstractController
             'source_id'=>$id
         ]);
         if(!$patient){
-            $response = $this->responseFabric->notFound('Patient not found');
-            return $this->json($response,$response['code']);
+            $this->responseFabric->notFound('Patient not found');
         }
         $patient = $this->adaptersService->patientToPatientResponseDTO(
             $patient,
@@ -124,6 +128,10 @@ final class PatientController extends AbstractController
 
         return $this->json($response,$response['code']);
     }
+
+    /**
+     * @throws ApiResponseException
+     */
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -192,11 +200,10 @@ final class PatientController extends AbstractController
         $data = $this->responseHelper
             ->checkData($data,'App\Entity\Patients');
         $result = $this->patientsRepository->findBy([
-            'card_number'=>$data?->getCardNumber()
+            'card_number'=>$data->getCardNumber()
         ]);
         if(!$data or !$validateService->patients($data) or $result){
-            $response = $this->responseFabric->notValid();
-            return $this->json($response,$response['code']);
+            $this->responseFabric->notValid();
         }
         $this->em->persist($data);
         $this->em->flush();
@@ -204,6 +211,10 @@ final class PatientController extends AbstractController
 
         return $this->json($response,$response['code']);
     }
+
+    /**
+     * @throws ApiResponseException
+     */
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -288,18 +299,15 @@ final class PatientController extends AbstractController
             ->checkData($data, 'App\DTO\Patients\PatientDTO');
         $patient = $this->patientsRepository->find($id);
         $chamber = $updatedData->chamber!=null?
-            $chambersRepository->find($updatedData?->chamber):null;
+            $chambersRepository->find($updatedData->chamber):null;
         if(!$updatedData ){
-            $response = $this->responseFabric->notValid();
-            return $this->json($response,$response['code']);
+            $this->responseFabric->notValid();
         }
         if(!$patient){
-            $response = $this->responseFabric->notFound('Patient - not found');
-            return $this->json($response,$response['code']);
+            $this->responseFabric->notFound('Patient - not found');
         }
         if (!$chamber){
-            $response = $this->responseFabric->notFound('Chamber - not found');
-            return $this->json($response,$response['code']);
+            $this->responseFabric->notFound('Chamber - not found');
         }
         $patient->setName($updatedData->name ?? $patient->getName());
         $chamberPatients = $patient->getChambersPatients();
@@ -319,6 +327,10 @@ final class PatientController extends AbstractController
         );
         return $this->json($response,$response['code']);
     }
+
+    /**
+     * @throws ApiResponseException
+     */
     #[OA\Response(
         response: 404,
         description: 'Patient not found',
@@ -355,8 +367,7 @@ final class PatientController extends AbstractController
             'source_id' => $id
         ]);
         if(!$patient){
-            $response = $this->responseFabric->notFound('Patient - not found');
-            return $this->json($response,$response['code']);
+            $this->responseFabric->notFound('Patient - not found');
         }
         foreach ($procedureList as $pl){
             $this->em->remove($pl);

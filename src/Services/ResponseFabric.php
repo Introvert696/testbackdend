@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Exception\ApiResponseException;
+
 class ResponseFabric
 {
     public function __construct(
@@ -10,10 +12,7 @@ class ResponseFabric
 
     public function notFound(string $message): array
     {
-        return $this->responseHelper->generate(
-            'Not found',
-            $this->responseHelper::STATUS_NOT_FOUND,
-            $message);
+        throw new ApiResponseException($message,code:$this->responseHelper::STATUS_NOT_FOUND,type:'Not found');
     }
     public function ok(string $message,mixed $data=null): array
     {
@@ -25,17 +24,11 @@ class ResponseFabric
     }
     public function notValid(): array
     {
-        return $this->responseHelper->generate(
-            'Error',
-            $this->responseHelper::STATUS_NOT_VALID_FIELDS,
-            'Check body');
+        throw new ApiResponseException('Check body',code:$this->responseHelper::STATUS_NOT_VALID_FIELDS,type:'Error');
     }
     public function conflict(mixed $data): array
     {
-        return $this->responseHelper->generate(
-            'Conflict',
-            $this->responseHelper::STATUS_CONFLICT,
-            'title has exists',
-            $data);
+        throw new ApiResponseException('Check fields',code:$this->responseHelper::STATUS_CONFLICT,type:'Conflict',data:$data);
+
     }
 }

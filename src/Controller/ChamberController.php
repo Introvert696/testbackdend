@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\DTO\Chamber\ChamberResponseDTO;
 use App\DTO\ResponseDTO;
+use App\Exception\ApiResponseException;
 use App\Repository\ChambersRepository;
 use App\Repository\ProcedureListRepository;
 use App\Services\AdaptersService;
@@ -62,6 +63,9 @@ final class ChamberController extends AbstractController
         return $this->json($response);
     }
 
+    /**
+     * @throws ApiResponseException
+     */
     #[OA\Response(
         response: 200,
         description: 'Return all chambers',
@@ -101,9 +105,7 @@ final class ChamberController extends AbstractController
         $patients = [];
         $chamber = $this->chambersRepository->find($id);
         if(!$chamber){
-            $response = $this->responseFabric->notFound('Chamber - not found');
-
-            return $this->json($response,$response['code']);
+            $this->responseFabric->notFound('Chamber - not found');
         }
         $chamberPatients = $chamber->getChambersPatients()->getValues();
         if($chamberPatients){
@@ -118,6 +120,10 @@ final class ChamberController extends AbstractController
 
        return $this->json($response,$response['code']);
     }
+
+    /**
+     * @throws ApiResponseException
+     */
     #[OA\Response(
         response: 200,
         description: 'Return all chambers',
@@ -178,13 +184,16 @@ final class ChamberController extends AbstractController
                 ->procedureListToChamberProcedureDTO($pl);
         }
         if(!$data){
-            $response = $this->responseFabric->notFound('Procedures not found');
-            return $this->json($response,$response['code']);
+            $this->responseFabric->notFound('Procedures not found');
         }
         $response = $this->responseFabric->ok('Procedures, chamber - '.$id ,$data);
 
         return $this->json($response,$response['code']);
     }
+
+    /**
+     * @throws ApiResponseException
+     */
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -251,20 +260,17 @@ final class ChamberController extends AbstractController
     {
         $procedures = [];
         $chamber = $this->chambersRepository->find($id);
+
         $procListDTO = $this->responseHelper->checkData($request->getContent(), 'App\DTO\Chamber\ProcListDTO[]');
         $procedureLists = $this->procedureListRepository->findBy([
             'source_type' => 'chambers',
             'source_id' => $id
         ]);
         if (!$chamber) {
-            $response = $this->responseFabric->notFound('Chamber - not found');
-
-            return $this->json($response, $response['code']);
+            $this->responseFabric->notFound('Chamber - not found');
         }
         if (!$procListDTO) {
-            $response = $this->responseFabric->notValid();
-
-            return $this->json($response, $response['code']);
+            $this->responseFabric->notValid();
         }
         if ($procedureLists) {
             foreach ($procedureLists as $pl) {
@@ -275,9 +281,7 @@ final class ChamberController extends AbstractController
             $proc = $this->validateService
                 ->procedureListWithProcedure($d);
             if (!$proc) {
-                $response = $this->responseFabric->notValid();
-
-                return $this->json($response, $response['code']);
+                $this->responseFabric->notValid();
             }
             $procList = $this->adaptersService
                 ->procListDtoToProcList($proc, $id);
@@ -290,6 +294,10 @@ final class ChamberController extends AbstractController
 
         return $this->json($response, $response['code']);
     }
+
+    /**
+     * @throws ApiResponseException
+     */
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -357,15 +365,14 @@ final class ChamberController extends AbstractController
             $this->responseHelper->checkData($request->getContent(),'App\Entity\Chambers')
         );
         if(!$data){
-            $response = $this->responseFabric->notValid();
-            return $this->json($response,$response['code']);
+            $this->responseFabric->notValid();
         }
         $chamber = $this->chambersRepository->findBy([
             'number' =>$data->getNumber()
         ]);
         if($chamber){
-            $response = $this->responseFabric->conflict($this->responseHelper->first($chamber));
-            return $this->json($response,$response['code']);
+            $this->responseFabric->conflict($this->responseHelper->first($chamber));
+
         }
         $this->em->persist($data);
         $this->em->flush();
@@ -373,6 +380,10 @@ final class ChamberController extends AbstractController
 
         return $this->json($response,$response['code']);
     }
+
+    /**
+     * @throws ApiResponseException
+     */
     #[OA\RequestBody(
       required: true,
         content: new OA\JsonContent(
@@ -427,12 +438,10 @@ final class ChamberController extends AbstractController
             ])
         );
         if(!$chamber){
-            $response = $this->responseFabric->notFound('Chamber - not found');
-            return $this->json($response,$response['code']);
+            $this->responseFabric->notFound('Chamber - not found');
         }
         if($valid){
-            $response = $this->responseFabric->notValid();
-            return $this->json($response,$response['code']);
+            $this->responseFabric->notValid();
         }
         $chamber->setNumber($data->getNumber());
         $this->em->flush();
@@ -440,6 +449,10 @@ final class ChamberController extends AbstractController
 
         return $this->json($response,$response['code']);
     }
+
+    /**
+     * @throws ApiResponseException
+     */
     #[OA\Response(
         response: 202,
         description: 'Return all chambers',
@@ -472,8 +485,7 @@ final class ChamberController extends AbstractController
     {
         $chamber= $this->chambersRepository->find($id);
         if(!$chamber){
-            $response = $this->responseFabric->notFound('Chamber - not found');
-            return $this->json($response,$response['code']);
+            $this->responseFabric->notFound('Chamber - not found');
         }
         $chamberPatient = $chamber->getChambersPatients()->getValues();
         if($chamberPatient){

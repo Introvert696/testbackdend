@@ -3,7 +3,6 @@
 namespace App\Tests\API\Procedure;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\HttpFoundation\Response;
 
 class StoreApiTest extends WebTestCase
 {

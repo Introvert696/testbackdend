@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\DTO\ResponseDTO;
+use App\Exception\ApiResponseException;
 use App\Repository\ProcedureListRepository;
 use App\Repository\ProceduresRepository;
 use App\Services\AdaptersService;
@@ -60,6 +61,10 @@ final class ProcedureController extends AbstractController
         $response = $this->responseFabric->ok('All procedures',$procedures);
         return $this->json($response);
     }
+
+    /**
+     * @throws ApiResponseException
+     */
     #[OA\Response(
         response: 200,
         description: 'Return procedure info',
@@ -122,8 +127,7 @@ final class ProcedureController extends AbstractController
     {
         $procedure = $this->proceduresRepository->find($id);
         if(!$procedure){
-            $response = $this->responseFabric->notFound('Patient - not found');
-            return $this->json($response,$response['code']);
+            $this->responseFabric->notFound('Patient - not found');
         }
         $procedureResponse = $adaptersService
             ->procedureToProcedureResponseDTO($procedure);
@@ -139,6 +143,10 @@ final class ProcedureController extends AbstractController
         $response = $this->responseFabric->ok('Procedure info',$procedureResponse);
         return $this->json($response,$response['code']);
     }
+
+    /**
+     * @throws ApiResponseException
+     */
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -209,25 +217,27 @@ final class ProcedureController extends AbstractController
         $data = $this->validateService->procedures(
             $this->responseHelper->checkData($data,'App\Entity\Procedures')
         );
+
         if(!$data){
-            $response = $this->responseFabric->notValid();
-            return $this->json($response,$response['code']);
+            $this->responseFabric->notValid();
         }
         $issetProcedure = $this->proceduresRepository->findBy([
             'title' => $data->getTitle()
         ]);
         if($issetProcedure){
-            $response = $this->responseFabric->conflict(
+            $this->responseFabric->conflict(
                 $this->responseHelper->first($issetProcedure)
             );
-
-            return $this->json($response,$response['code']);
         }
         $this->em->persist($data);
         $this->em->flush();
         $response = $this->responseFabric->ok('Procedure has been create',$data);
         return $this->json($response,$response['code']);
     }
+
+    /**
+     * @throws ApiResponseException
+     */
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -279,19 +289,16 @@ final class ProcedureController extends AbstractController
         $content = $request->getContent();
         $procedure = $this->proceduresRepository->find($id);
         if(!$procedure) {
-            $response = $this->responseFabric->notFound('Procedure not found');
-            return $this->json($response,$response['code']);
+            $this->responseFabric->notFound('Procedure not found');
         }
         if(!$content){
-            $response = $this->responseFabric->notValid();
-            return $this->json($response,$response['code']);
+            $this->responseFabric->notValid();
         }
         $data = $this->validateService->procedures(
             $this->responseHelper->checkData($content,'App\Entity\Procedures')
         );
         if(!$data){
-            $response = $this->responseFabric->notValid();
-            return $this->json($response,$response['code']);
+            $this->responseFabric->notValid();
         }
         $procedure->setTitle($data->getTitle());
         $procedure->setDescription($data->getDescription());
@@ -300,6 +307,10 @@ final class ProcedureController extends AbstractController
         $response = $this->responseFabric->ok('Procedure has been updated',$procedure);
         return $this->json($response,$response['code']);
     }
+
+    /**
+     * @throws ApiResponseException
+     */
     #[OA\Response(
         response: 404,
         description: 'Procedure not found',
@@ -332,8 +343,7 @@ final class ProcedureController extends AbstractController
     {
         $procedure = $this->proceduresRepository->find($id);
         if(!$procedure){
-            $response = $this->responseFabric->notFound('Procedure not found');
-            return $this->json($response,$response['code']);
+            $this->responseFabric->notFound('Procedure not found');
         }
         $this->em->remove($procedure);
         $this->em->flush();
