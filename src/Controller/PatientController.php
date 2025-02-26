@@ -29,7 +29,7 @@ final class PatientController extends AbstractController
         private readonly PatientsRepository $patientsRepository,
         private readonly ProcedureListRepository $procedureListRepository,
         private readonly AdaptersService $adaptersService,
-        private readonly ResponseFabric $responseFabric,
+        private readonly ResponseFabric $responseFabric
     ){}
     #[OA\Response(
         response: 200,
@@ -60,16 +60,12 @@ final class PatientController extends AbstractController
     #[Route('/',name:'index_patients',methods: ['GET'])]
     public function index(): JsonResponse
     {
-        $response = $this->responseFabric->ok(
-            'Return all patient',
-            $this->patientsRepository->findAll()
-        );
-        return $this->json($response);
+        return $this->responseFabric->getResponse(
+            ResponseFabric::RESPONSE_TYPE_OK,
+            'Info about patient',
+            $this->patientsRepository->findAll());
     }
 
-    /**
-     * @throws ApiResponseException
-     */
     #[OA\Response(
         response: 200,
         description: 'Return all patient',
@@ -112,21 +108,25 @@ final class PatientController extends AbstractController
     #[Route('/{id}', name: 'show_patients', defaults: ['id'=>null], methods: ['GET'])]
     public function show(int $id): JsonResponse
     {
-        $patient = $this->patientsRepository->find($id);
-        $procList = $this->procedureListRepository->findBy([
+        $foundPatient = $this->patientsRepository->find($id);
+        $foundProcList = $this->procedureListRepository->findBy([
             'source_type'=>'patients',
             'source_id'=>$id
         ]);
-        if(!$patient){
-            $this->responseFabric->notFound('Patient not found');
+        if(!$foundPatient){
+            return $this->responseFabric->getResponse(
+                ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
+                'Patient - not found');
         }
         $patient = $this->adaptersService->patientToPatientResponseDTO(
-            $patient,
-            $procList
+            $foundPatient,
+            $foundProcList
         );
-        $response = $this->responseFabric->ok('Info about patient',$patient);
 
-        return $this->json($response,$response['code']);
+        return $this->responseFabric->getResponse(
+            ResponseFabric::RESPONSE_TYPE_OK,
+            'Info about patient',
+            $patient);
     }
 
     /**
@@ -196,20 +196,29 @@ final class PatientController extends AbstractController
         ValidateService $validateService,
     ): JsonResponse
     {
-        $data = $request->getContent();
-        $data = $this->responseHelper
-            ->checkData($data,'App\Entity\Patients');
-        $result = $this->patientsRepository->findBy([
-            'card_number'=>$data->getCardNumber()
-        ]);
-        if(!$data or !$validateService->patients($data) or $result){
-            $this->responseFabric->notValid();
+        $requestData = $request->getContent();
+        $validRequest = $this->responseHelper->checkRequest(
+            $requestData,
+            'App\Entity\Patients');
+        if(!$validRequest){
+            return $this->responseFabric->getResponse(
+                ResponseFabric::RESPONSE_TYPE_NOT_VALID);
         }
-        $this->em->persist($data);
+        $patients = $this->patientsRepository->findBy([
+            'card_number'=>$validRequest->getCardNumber()
+        ]);
+        if( !$validateService->patients($validRequest) or $patients){
+            return $this->responseFabric->getResponse(
+                ResponseFabric::RESPONSE_TYPE_NOT_VALID);
+        }
+        $this->em->persist($validRequest);
         $this->em->flush();
-        $response = $this->responseFabric->ok('Patient has been created',$data);
 
-        return $this->json($response,$response['code']);
+
+        return $this->responseFabric->getResponse(
+            ResponseFabric::RESPONSE_TYPE_OK,
+            'Patient has been created',
+            $this->adaptersService->patientToPatientResponseDTO($validRequest));
     }
 
     /**
@@ -296,18 +305,24 @@ final class PatientController extends AbstractController
     {
         $data = $request->getContent();
         $updatedData = $this->responseHelper
-            ->checkData($data, 'App\DTO\Patients\PatientDTO');
+            ->checkRequest($data, 'App\DTO\Patients\PatientDTO');
         $patient = $this->patientsRepository->find($id);
         $chamber = $updatedData->chamber!=null?
             $chambersRepository->find($updatedData->chamber):null;
         if(!$updatedData ){
-            $this->responseFabric->notValid();
+            return $this->responseFabric->getResponse(
+                ResponseFabric::RESPONSE_TYPE_NOT_VALID,
+                'Chamber - not found');
         }
         if(!$patient){
-            $this->responseFabric->notFound('Patient - not found');
+            return $this->responseFabric->getResponse(
+                ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
+                'Patient - not found');
         }
         if (!$chamber){
-            $this->responseFabric->notFound('Chamber - not found');
+            return $this->responseFabric->getResponse(
+                ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
+                'Chamber - not found');
         }
         $patient->setName($updatedData->name ?? $patient->getName());
         $chamberPatients = $patient->getChambersPatients();
@@ -321,16 +336,13 @@ final class PatientController extends AbstractController
             $this->em->persist($chamberPatients);
         }
         $this->em->flush();
-        $response = $this->responseFabric->ok(
+
+        return $this->responseFabric->getResponse(
+            ResponseFabric::RESPONSE_TYPE_OK,
             'Patient has been updated',
-            $this->adaptersService->patientToPatientResponseDTO($patient)
-        );
-        return $this->json($response,$response['code']);
+            $this->adaptersService->patientToPatientResponseDTO($patient));
     }
 
-    /**
-     * @throws ApiResponseException
-     */
     #[OA\Response(
         response: 404,
         description: 'Patient not found',
@@ -367,14 +379,18 @@ final class PatientController extends AbstractController
             'source_id' => $id
         ]);
         if(!$patient){
-            $this->responseFabric->notFound('Patient - not found');
+            return $this->responseFabric->getResponse(
+                ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
+                'Patient not found');
         }
         foreach ($procedureList as $pl){
             $this->em->remove($pl);
         }
         $this->em->remove($this->responseHelper->first($patient));
         $this->em->flush();
-        $response = $this->responseFabric->ok('Patient has been delete');
-        return $this->json($response,$response['code']);
+        return $this->responseFabric->getResponse(
+            ResponseFabric::RESPONSE_TYPE_OK,
+            'Patient has been delete');
     }
+
 }

@@ -1,5 +1,5 @@
 <?php
-namespace App\Tests\Services\JsonResponseHelper;
+namespace App\Tests\Services\ResponseHelper;
 
 use App\Tests\Services\BaseService;
 

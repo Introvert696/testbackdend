@@ -13,7 +13,6 @@ class ResponseHelper
 {
     public const STATUS_OK = 200;
     public const STATUS_NOT_VALID_FIELDS = 402;
-    public const STATUS_NOT_VALID_BODY = 502;
     public const STATUS_NOT_FOUND = 404;
     public const STATUS_CONFLICT = 409;
 
@@ -45,7 +44,7 @@ class ResponseHelper
         }
         return $data[0];
     }
-    public function checkData($data,$class): object|array|bool
+    public function checkRequest($data, $class): object|array|bool
     {
         try {
             $data = $this->serializer->deserialize($data,$class,'json');

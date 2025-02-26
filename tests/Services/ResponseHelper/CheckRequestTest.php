@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Tests\Services\JsonResponseHelper;
+namespace App\Tests\Services\ResponseHelper;
 
 use App\Tests\Services\BaseService;
 
-class CheckDataTest extends BaseService
+class CheckRequestTest extends BaseService
 {
     public function testValidData(): void
     {
@@ -12,7 +12,7 @@ class CheckDataTest extends BaseService
         $data = [
             "number"=> 228
         ];
-        $response =  $this->jsonResopnseHelper->checkData(json_encode($data),$classname);
+        $response =  $this->jsonResopnseHelper->checkRequest(json_encode($data),$classname);
 
         $this->assertIsObject($response);
         $this->assertSame($classname,$response::class);
@@ -22,7 +22,7 @@ class CheckDataTest extends BaseService
         $classname = 'App\Entity\Chambers';
         $data = [
         ];
-        $response =  $this->jsonResopnseHelper->checkData(json_encode($data),$classname);
+        $response =  $this->jsonResopnseHelper->checkRequest(json_encode($data),$classname);
 
         $this->assertIsObject($response);
         $this->assertSame($classname,$response::class);
@@ -31,7 +31,7 @@ class CheckDataTest extends BaseService
     {
         $classname = 'App\Entity\Chambers';
         $data = "asdfafasfasdf";
-        $response =  $this->jsonResopnseHelper->checkData($data,$classname);
+        $response =  $this->jsonResopnseHelper->checkRequest($data,$classname);
 
         $this->assertFalse($response);
     }
@@ -41,7 +41,7 @@ class CheckDataTest extends BaseService
         $data = [
             "number"=> 228
         ];
-        $response =  $this->jsonResopnseHelper->checkData(json_encode($data),$classname);
+        $response =  $this->jsonResopnseHelper->checkRequest(json_encode($data),$classname);
         $this->assertFalse($response);
     }
 

@@ -58,8 +58,11 @@ final class ProcedureController extends AbstractController
     public function index(): JsonResponse
     {
         $procedures = $this->proceduresRepository->findAll();
-        $response = $this->responseFabric->ok('All procedures',$procedures);
-        return $this->json($response);
+        return $this->responseFabric->getResponse(
+            ResponseFabric::RESPONSE_TYPE_OK,
+            'All procedures',
+            $procedures);
+
     }
 
     /**
@@ -127,7 +130,9 @@ final class ProcedureController extends AbstractController
     {
         $procedure = $this->proceduresRepository->find($id);
         if(!$procedure){
-            $this->responseFabric->notFound('Patient - not found');
+            return $this->responseFabric->getResponse(
+                ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
+                'procedure - not found');
         }
         $procedureResponse = $adaptersService
             ->procedureToProcedureResponseDTO($procedure);
@@ -140,8 +145,11 @@ final class ProcedureController extends AbstractController
                 $adaptersService->procListToProcListRespDTO($et)
             );
         }
-        $response = $this->responseFabric->ok('Procedure info',$procedureResponse);
-        return $this->json($response,$response['code']);
+
+        return $this->responseFabric->getResponse(
+            ResponseFabric::RESPONSE_TYPE_OK,
+            'Info about procedure',
+            $procedureResponse);
     }
 
     /**
@@ -213,25 +221,30 @@ final class ProcedureController extends AbstractController
     #[Route( name: 'store_procedure',methods: ['POST'])]
     public function store(Request $request): JsonResponse
     {
-        $data = $request->getContent();
-        $data = $this->validateService->procedures(
-            $this->responseHelper->checkData($data,'App\Entity\Procedures')
+        $requestContent = $request->getContent();
+        $validatedProcedure = $this->validateService->procedures(
+            $this->responseHelper->checkRequest($requestContent,'App\Entity\Procedures')
         );
-        if(!$data){
-            $this->responseFabric->notValid();
+        if(!$validatedProcedure){
+            return $this->responseFabric->getResponse(
+                ResponseFabric::RESPONSE_TYPE_NOT_VALID);
         }
         $issetProcedure = $this->proceduresRepository->findBy([
-            'title' => $data->getTitle()
+            'title' => $validatedProcedure->getTitle()
         ]);
         if($issetProcedure){
-            $this->responseFabric->conflict(
-                $this->responseHelper->first($issetProcedure)
+            return $this->responseFabric->getResponse(
+                ResponseFabric::RESPONSE_TYPE_CONFLICT,
+                data: $this->responseHelper->first($issetProcedure)
             );
         }
-        $this->em->persist($data);
+        $this->em->persist($validatedProcedure);
         $this->em->flush();
-        $response = $this->responseFabric->ok('Procedure has been create',$data);
-        return $this->json($response,$response['code']);
+
+        return $this->responseFabric->getResponse(
+            ResponseFabric::RESPONSE_TYPE_OK,
+            'Procedure has been create',
+            $validatedProcedure);
     }
 
     /**
@@ -288,23 +301,29 @@ final class ProcedureController extends AbstractController
         $content = $request->getContent();
         $procedure = $this->proceduresRepository->find($id);
         if(!$procedure) {
-            $this->responseFabric->notFound('Procedure not found');
+            return $this->responseFabric->getResponse(
+                ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
+                'Procedure not found');
         }
         if(!$content){
-            $this->responseFabric->notValid();
+            return $this->responseFabric->getResponse(
+                ResponseFabric::RESPONSE_TYPE_NOT_VALID);
         }
-        $data = $this->validateService->procedures(
-            $this->responseHelper->checkData($content,'App\Entity\Procedures')
+        $validatedProcedure = $this->validateService->procedures(
+            $this->responseHelper->checkRequest($content,'App\Entity\Procedures')
         );
-        if(!$data){
-            $this->responseFabric->notValid();
+        if(!$validatedProcedure){
+            return $this->responseFabric->getResponse(
+                ResponseFabric::RESPONSE_TYPE_NOT_VALID);
         }
-        $procedure->setTitle($data->getTitle());
-        $procedure->setDescription($data->getDescription());
+        $procedure->setTitle($validatedProcedure->getTitle());
+        $procedure->setDescription($validatedProcedure->getDescription());
         $this->em->flush();
 
-        $response = $this->responseFabric->ok('Procedure has been updated',$procedure);
-        return $this->json($response,$response['code']);
+        return $this->responseFabric->getResponse(
+            ResponseFabric::RESPONSE_TYPE_OK,
+            'Procedure has been updated',
+            $procedure);
     }
 
     /**
@@ -342,12 +361,15 @@ final class ProcedureController extends AbstractController
     {
         $procedure = $this->proceduresRepository->find($id);
         if(!$procedure){
-            $this->responseFabric->notFound('Procedure not found');
+            return $this->responseFabric->getResponse(
+                ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
+                'Procedure not found');
         }
         $this->em->remove($procedure);
         $this->em->flush();
-        $response = $this->responseFabric->ok('Procedure has been delete');
 
-        return $this->json($response,$response['code']);
+        return $this->responseFabric->getResponse(
+            ResponseFabric::RESPONSE_TYPE_OK,
+            'Procedure has been delete');
     }
 }

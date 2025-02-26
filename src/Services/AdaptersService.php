@@ -19,7 +19,7 @@ class AdaptersService
         private readonly ValidateService $validator,
     ){}
     public function patientToPatientResponseDTO(
-        Patients $patients,
+        object $patients,
         $procList = null
     ): PatientResponseDTO| bool
     {
