@@ -33,7 +33,7 @@ services:
     restart: always
     shm_size: 128mb
     volumes:
-      - db:/var/lib/postgresql/data
+      - db_medicine:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: symfony_db
       POSTGRES_USER: symfony_user
@@ -46,4 +46,4 @@ services:
           cpus: "2"
           memory: 2G
 volumes:
-  db:
+  db_medicine:

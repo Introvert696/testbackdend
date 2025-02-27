@@ -305,6 +305,7 @@ final class ProcedureController extends AbstractController
         ),
     )]
     #[OA\Tag(name:"Procedure")]
+    // выводиться исключение если данные уже есть
     #[Route('/{id}', name: 'update_procedure',methods: ['PATCH'])]
     public function update(Request $request,$id): JsonResponse
     {

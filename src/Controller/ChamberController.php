@@ -394,6 +394,7 @@ final class ChamberController extends AbstractController
         if($foundChamber){
             $response = $this->responseFabric->getResponse(
                 ResponseFabric::RESPONSE_TYPE_CONFLICT,
+                "",
                 $this->responseHelper->first($foundChamber));
             return $this->json($response,$response['code']);
         }
