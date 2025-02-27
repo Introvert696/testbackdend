@@ -10,7 +10,7 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20250211075221 extends AbstractMigration
+final class Version20250227070725 extends AbstractMigration
 {
     public function getDescription(): string
     {
@@ -37,7 +37,7 @@ final class Version20250211075221 extends AbstractMigration
         $this->addSql('CREATE TABLE procedures (id INT NOT NULL, title VARCHAR(255) NOT NULL, description TEXT DEFAULT NULL, PRIMARY KEY(id))');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_969AFE422B36786B ON procedures (title)');
         $this->addSql('ALTER TABLE chambers_patients ADD CONSTRAINT FK_E24B50C047FF4606 FOREIGN KEY (chambers_id) REFERENCES chambers (id) NOT DEFERRABLE INITIALLY IMMEDIATE');
-        $this->addSql('ALTER TABLE chambers_patients ADD CONSTRAINT FK_E24B50C0CEC3FD2F FOREIGN KEY (patients_id) REFERENCES patients (id) NOT DEFERRABLE INITIALLY IMMEDIATE');
+        $this->addSql('ALTER TABLE chambers_patients ADD CONSTRAINT FK_E24B50C0CEC3FD2F FOREIGN KEY (patients_id) REFERENCES patients (id) ON DELETE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE');
         $this->addSql('ALTER TABLE procedure_list ADD CONSTRAINT FK_5C7CA0908FBA2A61 FOREIGN KEY (procedures_id) REFERENCES procedures (id) NOT DEFERRABLE INITIALLY IMMEDIATE');
     }
 

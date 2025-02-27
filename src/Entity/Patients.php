@@ -12,7 +12,7 @@ use Symfony\Component\Serializer\Attribute\Ignore;
 class Patients
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
+    #[ORM\GeneratedValue(strategy: 'SEQUENCE')]
     #[ORM\Column]
     #[OA\Property(type: 'integer')]
     private ?int $id = null;

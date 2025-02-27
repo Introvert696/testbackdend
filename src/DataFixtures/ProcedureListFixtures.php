@@ -20,7 +20,7 @@ class ProcedureListFixtures extends Fixture implements DependentFixtureInterface
     public function load(ObjectManager $manager): void
     {
         $limit = $this->parameterBag->get('fixture_rate');
-        $faker = Factory::create();
+        $faker = Factory::create('ru_RU');
 
         for($i= 0 ;$i<$limit;$i++){
             $procList = new ProcedureList();

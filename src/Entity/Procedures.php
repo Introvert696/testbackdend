@@ -14,7 +14,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 class Procedures
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
+    #[ORM\GeneratedValue(strategy: 'SEQUENCE')]
     #[ORM\Column]
     private ?int $id = null;
 

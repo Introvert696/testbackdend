@@ -24,6 +24,5 @@
 /assets/vendor/
 ###< symfony/asset-mapper ###
 .env
-.env.test
-.env.*
-/.env.*
+.env.dev
+/.env.

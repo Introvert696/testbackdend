@@ -29,7 +29,7 @@ services:
           memory: 3G
 
   db:
-    image: postgres:14
+    image: postgres:13
     restart: always
     shm_size: 128mb
     volumes:

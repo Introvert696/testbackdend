@@ -16,7 +16,7 @@ class ChambersFixtures extends Fixture
     public function load(ObjectManager $manager): void
     {
         $limit = $this->parameterBag->get('fixture_rate');
-        $faker = Factory::create();
+        $faker = Factory::create('ru_RU');
         for($i = 0; $i<$limit; $i++){
             $chamber = new Chambers();
             $chamber->setNumber(

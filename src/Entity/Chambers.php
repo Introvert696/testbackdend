@@ -15,7 +15,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 class Chambers
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
+    #[ORM\GeneratedValue(strategy: 'SEQUENCE')]
     #[ORM\Column]
     #[OA\Property(description: 'Unique identifier')]
     #[Assert\Type('integer')]
