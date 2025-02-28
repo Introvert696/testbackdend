@@ -17,6 +17,12 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+
+/**
+ * Внимание тут написан будет очень плохой код,
+ * Для начала я хочу костыльно все реализовать что бы это
+ * просто работало, после я буду этот код переделывать
+ */
 #[AsCommand(
     name: 'custom:migration:migrate:hospital',
     description: 'Add a short description for your command',
@@ -96,7 +102,7 @@ class CustomMigrationMigrateHospitalCommand extends Command
 
     private function getRowsFromTable(string $tableName, string $tableColumn): array
     {
-        $query = sprintf("SELECT %s from %s limit 3", $tableColumn, $tableName);
+        $query = sprintf("SELECT %s from %s", $tableColumn, $tableName);
 
         return $this->makeQuery($query);
     }
@@ -119,10 +125,11 @@ class CustomMigrationMigrateHospitalCommand extends Command
                 continue;
             }
             $newPatient = new Patients();
-            $newPatient->setName($sp['name'].' '.$sp['lastname']);
+            $newPatient->setName($sp['name'].' '.$sp['last_name']);
             $newPatient->setCardNumber($sp['card_number']);
 
             $this->entityManager->persist($newPatient);
+
         }
         $this->entityManager->flush();
         $this->io->success('Patients has been migrate');
@@ -163,24 +170,144 @@ class CustomMigrationMigrateHospitalCommand extends Command
             return false;
         }
         foreach ($hospitalizations as $hz) {
+            $newChambersPatients = new ChambersPatients();
             $chambersPatientsRepository = $this->entityManager->getRepository(ChambersPatients::class);
-            // тут вот интересно потому что там привязка локальная и id другие, т.е. нам надо
-            // в той базе данных получить пациента, и получить ward и уже сдесь в локальной подготовить запрос
+            $patientsRepository = $this->entityManager->getRepository(Patients::class);
+            $chamberRepository = $this->entityManager->getRepository(Chambers::class);
 
-            $chambersPatients = $chambersPatientsRepository->findBy([
-
+            $patient = $this->makeQuery("Select name,last_name,card_number from patient where id=".$hz['patient_id']);
+            if(count($patient)<=0){
+                $this->io->text("Source patient not found - skip");
+                continue;
+            }
+            $foundPatient = $patientsRepository->findBy([
+                "name" => $patient[0]['name'].' '.$patient[0]['last_name'],
+                "card_number" => $patient[0]['card_number'],
             ]);
-        }
+            if(count($foundPatient)<=0){
+                //если пациент не найден, то не создаем запись
+                $this->io->text("Target patient not found - skip");
+                continue;
+            }
+            // тут ищем сначала палату из сурса бд, что бы узнать какой у нее был номер
+            $chambers = $this->makeQuery("Select ward_number from ward where id=".$hz['ward_id']);
+            // если в Сурс бд нет такой палаты, то скипаем
+            if(count($chambers)<=0){
+                $this->io->text("Source chambers not found - skip");
+                continue;
+            }
+            // теперь ищем палату с таким же номером, но в таргет бд
+            $foundChamber = $chamberRepository->findBy([
+                "number" => $chambers[0]['ward_number']
+            ]);
+            // если ее нет, то скипаем
+            if(count($foundChamber)<=0){
+                // если не найдена палата то тоже не создаем запись
+                $this->io->text("Chamber not found - skip");
+                continue;;
+            }
+            // проверяем, есть ли такая запись в таргет бд
+            $foundChamberPatients = $chambersPatientsRepository->findBy([
+                "chambers" => $foundChamber[0],
+                "patients" => $foundPatient[0]
+            ]);
+            // если она есть то скипаем
+            if(count($foundChamberPatients)>0){
+                $this->io->text("ChamberPatients - has exists");
+                continue;
+            }
+            // если ее нет, то создаем новую запись
+            $newChambersPatients->setChambers($foundChamber[0]);
+            $newChambersPatients->setPatients($foundPatient[0]);
 
+            $this->entityManager->persist($newChambersPatients);
+
+        }
+        $this->entityManager->flush();
+        $this->io->success('ChamberPatients has been migrate');
         return true;
     }
     private function createProcedure(string $tableName, array $structure): bool
     {
-        return false;
+        $columns = implode(",", $structure);
+        $sourceProcedures = $this->getRowsFromTable($tableName, $columns);
+        if (count($sourceProcedures) <= 0) {
+            return false;
+        }
+        foreach ($sourceProcedures as $sp){
+            $procedureRepository = $this->entityManager->getRepository(Procedures::class);
+            $foundProcedure = $procedureRepository->findBy([
+                "title" => $sp['name'],
+                "description" => $sp['description']
+            ]);
+            // если такая процедура найдена, то скипаем
+            if(count($foundProcedure)>0){
+                $this->io->text('Procedure is exists, title - '.$sp['name']);
+                continue;
+            }
+            $newProcedure = new Procedures();
+            $newProcedure->setTitle($sp['name']);
+            $newProcedure->setDescription($sp['description']);
+
+            $this->entityManager->persist($newProcedure);
+        }
+        $this->entityManager->flush();
+        $this->io->success('Procedures has been migrated');
+        return true;
     }
 
     private function createWard_procedure(string $tableName, array $structure): bool
     {
+        // работаем с ProcedureList
+        $columns = implode(",", $structure);
+        $procedureListRepository = $this->entityManager->getRepository(ProcedureList::class);
+        $chamberRepository = $this->entityManager->getRepository(Chambers::class);
+        $procedureRepository = $this->entityManager->getRepository(Procedures::class);
+
+
+        $sourceWardProcedures= $this->getRowsFromTable($tableName, $columns);
+        foreach($sourceWardProcedures as $swp){
+            $sourceFoundProcedure = $this->makeQuery("Select * from procedure where id=".$swp['procedure_id']);
+            $sourceFoundWard = $this->makeQuery("Select ward_number from ward where id=".$swp['ward_id']);
+            if(count($sourceFoundProcedure)<=0){
+                continue;
+            }
+
+            $foundProcedures = $procedureRepository->findBy([
+                "title" => $sourceFoundProcedure[0]['name'],
+                "description" => $sourceFoundProcedure[0]['description']
+            ]);
+            if(count($foundProcedures)<=0){
+                $this->io->text('Procedure not found in target db - skip');
+                continue;
+            }
+            $findChamber = $chamberRepository->findBy([
+                'number' => $sourceFoundWard[0]['ward_number']
+            ]);
+            if(count($findChamber)<=0){
+                $this->io->text('Chamber not found - skip');
+                continue;
+            }
+            $findProcedureList = $procedureListRepository->findBy([
+                'procedures'=> $foundProcedures[0],
+                'source_type' => 'chambers',
+                'source_id' => $swp['ward_id']
+            ]);
+            if(count($findProcedureList)>0){
+                $this->io->text("Procedure list is exists - skip");
+                continue;
+            }
+            $newProcedureList = new ProcedureList();
+            $newProcedureList->setProcedures($foundProcedures[0]);
+            $newProcedureList->setStatus(false);
+            $newProcedureList->setQueue($swp['sequence']);
+            $newProcedureList->setSourceId($swp['ward_id']);
+            $newProcedureList->setSourceType('chambers');
+            $this->entityManager->persist($newProcedureList);
+
+        }
+        $this->entityManager->flush();
+        $this->io->success('Ward_procedure has been migrated');
         return false;
     }
     private function makeQuery(string $sql): array
@@ -192,9 +319,6 @@ class CustomMigrationMigrateHospitalCommand extends Command
 
         return $result->fetchAll(PDO::FETCH_ASSOC);
     }
-
-
-
 }
 
 /*
