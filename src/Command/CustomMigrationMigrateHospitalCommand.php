@@ -79,12 +79,11 @@ class CustomMigrationMigrateHospitalCommand extends Command
     {
         $this->io = new SymfonyStyle($input, $output);
 
-        // пробигаемся по массиву со структурой базы данных от куда будет брать данные
-        foreach ($this->dbStruct as $key => $struct) {
-            $result = $this->adapterFabric($key, $struct);
+        // пробегаемся по массиву со структурой базы данных от куда будет брать данные
+        foreach ($this->structConvert as $key => $struct) {
+            $result = $this->newAdapterFabric($key, $struct);
         }
-        dd();
-        $io->success('You have a new command! Now make it your own! Pass --help to see your options.');
+        $this->io->success('Migrate successfully ended');
 
         return Command::SUCCESS;
     }
@@ -102,7 +101,7 @@ class CustomMigrationMigrateHospitalCommand extends Command
 
     private function getRowsFromTable(string $tableName, string $tableColumn): array
     {
-        $query = sprintf("SELECT %s from %s", $tableColumn, $tableName);
+        $query = sprintf("SELECT %s from %s limit 5", $tableColumn, $tableName);
 
         return $this->makeQuery($query);
     }
@@ -319,100 +318,159 @@ class CustomMigrationMigrateHospitalCommand extends Command
 
         return $result->fetchAll(PDO::FETCH_ASSOC);
     }
-}
-
-/*
-    // таблица "откуда берем" -> к какой сущности привязываем
+// таблица "откуда берем" -> к какой сущности привязываем
     // сделать условие если id то поиск этой сущности
     // это прям mi bombocla решение, но тут надо очень подумать
     private array $structConvert = [
         "patient"=>[
             'target' => Patients::class,
             "fields" => [
-                "name" => "name",
-                "last_name" => "name",
-                'card_number' => 'card_number'
+                "name" => [
+                    "type"=>"string",
+                    "setter" => "setName",
+                    "source_fields" => ["name","last_name"],
+                ],
+                "card_number" => [
+                    'type' => 'integer',
+                    'setter' => 'setCardNumber',
+                    'source_fields' => ['card_number']
+                ],
             ]
         ],
         "ward" => [
             'target' => Chambers::class,
             'fields' => [
-                'ward_number' => 'number'
+                'number' => [
+                    'type' => 'string',
+                    'setter' => 'setNumber',
+                    'source_fields' => ['ward_number']
+                ]
             ]
         ],
         'hospitalization' => [
             'target' => ChambersPatients::class,
             'fields' => [
-                'ward_id' => 'chambers',
-                'patient_id' => 'patients'
+                'chambers' => [
+                    'type' => Chambers::class,
+                    'setter' => 'setChamber',
+                    'source_fields' => ['ward_id']
+                ],
+                'patients' => [
+                    'type' => Patients::class,
+                    'setter' => 'setPatients',
+                    'source_fields' => ['patient_id']
+                ]
             ]
         ],
         'procedure' => [
             'target' => Procedures::class,
             'fields' => [
-                'name' => 'title',
-                'description' => 'description'
+                'title' => [
+                    'type' => "string",
+                    'setter' => 'setName',
+                    'source_fields' => ['name']
+                ],
+                'description' => [
+                    'type' => "string",
+                    'setter' => 'setDescription',
+                    'source_fields' => ['description']
+                ]
             ]
         ],
         'ward_procedure' => [
             'target' => ProcedureList::class,
             'fields' => [
-                'procedure_id' => 'procedures',
-                'ward_id' => 'source_id',
-                '!chamber' => 'source_type'
-
+                'procedures' => [
+                    'type' => Procedures::class,
+                    'setter' => 'setDescription',
+                    'source_fields' => ['procedure_id']
+                ],
+                'source_id' => [
+                    'type' => 'integer',
+                    'setter' => 'setSourceId',
+                    'source_fields' => ['ward_id']
+                ],
+                'source_type' => [
+                    'type' => 'string',
+                    'setter' => 'setSourceType',
+                    'source_fields' => [],
+                    'default' => 'chambers'
+                ]
             ]
         ]
     ];
 
-// это просто миграция которая универсальная, я ее устал делать поэтому ща просто сделаю
-// на нужнную бд и все
-//private function migrate(string $tableName,array $structure): bool
-//    {
-//        $columns = implode(",",$structure['fields']);
-//        $sourceRow = $this->getRowsFromTable($tableName,"*");
-//        foreach ($sourceRow as $sr){
-//            $newObj = new $structure['target']();
-//            foreach ($structure['fields'] as $sourceFiled => $targetField) {
-//                dump($sr);
-//                if(str_contains($targetField,'_')){
-//                    $targetField = explode('_',$targetField);
-//                    $targetField = implode('',array_map('ucfirst',$targetField));
-//                }
-//                else {
-//                    $targetField = ucfirst($targetField);
-//                }
-//                $setterField = "set".$targetField;
-//                $getterField = "get".$targetField;
-//                $newObj->$setterField($newObj->$getterField()?$newObj->$getterField().' '.$sr[$sourceFiled]:$sr[$sourceFiled]);
-//
-//            }
-//            dump($newObj);
-//        }
-////        dd($sourceRow);
-////        $columns = implode(",",$structure);
-////        $patients = $this->getRowsFromTable($tableName,$columns);
-////        if(count($patients)<=0){
-////            return false;
-////        }
-////        foreach ($patients as $pt){
-////            // check field in database, because he maybe exists
-////            $patientsRepository = $this->entityManager->getRepository(Patients::class);
-////            $findPatients= $patientsRepository->findBy([
-////                "name" => $pt['name'].' '.$pt['last_name'],
-////                "card_number" => $pt['card_number']
-////            ]);
-////            if(count($findPatients)>0){
-////                continue;
-////            }
-////            $newPatient = new Patients();
-////            $newPatient->setName($pt['name'].' '.$pt['last_name']);
-////            $newPatient->setCardNumber($pt['card_number']);
-////            $this->entityManager->persist($newPatient);
-////        }
-////        $this->entityManager->flush();
-//
-//        return true;
-//    }
+    private function newAdapterFabric(string $entityType, array $structure): bool
+    {
+        $functionName = "create" . ucfirst($entityType);
+        return $this->migrateTable($entityType,$structure);
+    }
+    private function migrateTable($entityType,$structure): bool
+    {
+        dump($entityType,$structure);
+        $columnsForSearch =[];
+        foreach ($structure['fields'] as $values){
+            foreach ($values['source_fields'] as $sf) {
+                $columnsForSearch[] = $sf;
+            }
+        }
+        $columnsForSearch = implode(",", $columnsForSearch);
+        $sourceItems = $this->getRowsFromTable($entityType, $columnsForSearch);
+        if(count($sourceItems)==0){
+            return false;
+        }
 
-*/
+        foreach ($sourceItems as $item){
+            // проверка на существование обьектов в таргет базе данных
+            $findObj = $this->getObjectFromRepository($item,$structure);
+
+            if(count($findObj)>0){
+                continue;
+            }
+            // если обьектов нет, то начинаем создавать
+            // для создания обьекта нам нужно пробежать по fields обьекта и если, простой тип,
+            // то украсть и создать,
+            // но если там класс, то надо найти этот класс и вставить его как обьект
+            // так же надо проверять на поле default - если оно есть, то в приоритете брать
+            // с этого поля
+            $newObj = new $structure['target'];
+            foreach ($structure['fields'] as $field => $property){
+                foreach ($property['source_fields'] as $sourceField){
+
+                }
+                $newObj->$property['setter']();
+                dump($field);
+                dd($property);
+            }
+
+
+
+        }
+
+        return false;
+    }
+    private function getObjectFromRepository(array $item,array $structure): array
+    {
+        $objRepository = $this->entityManager->getRepository($structure['target']);
+        $findByConfig = [];
+
+        foreach ($structure['fields'] as $field => $property){
+            if(class_exists($property['type'])){
+                // если нашли класс в конфиге то обрабатываем по другому
+            }
+            else if((gettype($property['type'])==="string" )or (gettype($property['type'])==="integer")){
+                // т.е. если тип строка или число
+                foreach($property['source_fields'] as $sf){
+                    if(isset($findByConfig[$field])){
+                        $findByConfig[$field] = $findByConfig[$field].' '.$item[$sf];
+                    }
+                    else{
+                        $findByConfig[$field] = $item[$sf];
+                    }
+                }
+            }
+        }
+        return $objRepository->findBy($findByConfig);
+    }
+
+}
