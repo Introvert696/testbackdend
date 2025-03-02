@@ -23,17 +23,15 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 )]
 class OtherMigrationHospitalCommand extends Command
 {
-    // таблица "откуда берем" -> к какой сущности привязываем
-    // сделать условие если id то поиск этой сущности
-    // это прям mi bombocla решение, но тут надо очень подумать
+    // конфигурация для миграции базы данных
     private array $structConvert = [
-        "patient"=>[
+        "patient" => [
             'target' => Patients::class,
             "fields" => [
                 "name" => [
-                    "type"=>"string",
+                    "type" => "string",
                     "setter" => "setName",
-                    "source_fields" => ["name","last_name"],
+                    "source_fields" => ["name", "last_name"],
                 ],
                 "card_number" => [
                     'type' => 'integer',
@@ -57,13 +55,24 @@ class OtherMigrationHospitalCommand extends Command
             'fields' => [
                 'chambers' => [
                     'type' => Chambers::class,
-                    'setter' => 'setChamber',
-                    'source_fields' => ['ward_id']
+                    'setter' => 'setChambers',
+                    'source_fields' => ['ward_id'],
+                    'source_table' => 'ward',
+                    'fields_for_search' => [
+                        'ward_number' => "number"
+                    ],
+
                 ],
                 'patients' => [
                     'type' => Patients::class,
                     'setter' => 'setPatients',
-                    'source_fields' => ['patient_id']
+                    'source_fields' => ['patient_id'],
+                    'source_table' => 'patient',
+                    'fields_for_search' => [
+                        'name' => 'name',
+                        'last_name' => 'name',
+                        'card_number' => 'card_number',
+                    ],
                 ]
             ]
         ],
@@ -72,7 +81,7 @@ class OtherMigrationHospitalCommand extends Command
             'fields' => [
                 'title' => [
                     'type' => "string",
-                    'setter' => 'setName',
+                    'setter' => 'setTitle',
                     'source_fields' => ['name']
                 ],
                 'description' => [
@@ -87,8 +96,13 @@ class OtherMigrationHospitalCommand extends Command
             'fields' => [
                 'procedures' => [
                     'type' => Procedures::class,
-                    'setter' => 'setDescription',
-                    'source_fields' => ['procedure_id']
+                    'setter' => 'setProcedures',
+                    'source_fields' => ['procedure_id'],
+                    'source_table' => 'procedure',
+                    'fields_for_search' => [
+                        'name' => "title",
+                        'description' => "description",
+                    ],
                 ],
                 'source_id' => [
                     'type' => 'integer',
@@ -96,15 +110,21 @@ class OtherMigrationHospitalCommand extends Command
                     'source_fields' => ['ward_id']
                 ],
                 'source_type' => [
-                    'type' => 'string',
+                    'type' => 'default',
                     'setter' => 'setSourceType',
                     'source_fields' => [],
                     'default' => 'chambers'
+                ],
+                'queue' => [
+                    'type' => 'integer',
+                    'setter' => 'setQueue',
+                    'source_fields' => ['sequence'],
                 ]
             ]
         ]
     ];
     private SymfonyStyle $io;
+
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
     )
@@ -112,6 +132,7 @@ class OtherMigrationHospitalCommand extends Command
         parent::__construct();
 
     }
+
     protected function configure(): void
     {
         $this
@@ -122,21 +143,21 @@ class OtherMigrationHospitalCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->io = new SymfonyStyle($input, $output);
-
-        // пробегаемся по массиву со структурой базы данных от куда будет брать данные
         foreach ($this->structConvert as $key => $struct) {
-            $result = $this->newAdapterFabric($key, $struct);
+            $this->newAdapterFabric($key, $struct);
         }
         $this->io->success('Migrate successfully ended');
 
         return Command::SUCCESS;
     }
+
     private function getRowsFromTable(string $tableName, string $tableColumn): array
     {
-        $query = sprintf("SELECT %s from %s limit 5", $tableColumn, $tableName);
+        $query = sprintf("SELECT %s from %s", $tableColumn, $tableName);
 
         return $this->makeQuery($query);
     }
+
     private function makeQuery(string $sql): array
     {
         $dsn = 'pgsql:host=localhost;port=5433;dbname=hospital;user=symfony_user;password=symfony_password';
@@ -146,52 +167,90 @@ class OtherMigrationHospitalCommand extends Command
 
         return $result->fetchAll(PDO::FETCH_ASSOC);
     }
+
     private function newAdapterFabric(string $entityType, array $structure): bool
     {
-        $functionName = "create" . ucfirst($entityType);
-        return $this->migrateTable($entityType,$structure);
+        return $this->migrateTable($entityType, $structure);
     }
-    private function migrateTable($entityType,$structure): bool
+
+    private function migrateTable($entityType, $structure): bool
     {
-        dump($entityType,$structure);
-        $columnsForSearch =[];
-        foreach ($structure['fields'] as $values){
+
+        $columnsForSearch = [];
+        foreach ($structure['fields'] as $values) {
             foreach ($values['source_fields'] as $sf) {
                 $columnsForSearch[] = $sf;
             }
         }
         $columnsForSearch = implode(",", $columnsForSearch);
         $sourceItems = $this->getRowsFromTable($entityType, $columnsForSearch);
-        if(count($sourceItems)==0){
+        if (count($sourceItems) == 0) {
             return false;
         }
 
-        foreach ($sourceItems as $item){
-            // проверка на существование обьектов в таргет базе данных
-            $findObj = $this->getObjectFromRepository($item,$structure);
-
-            if(count($findObj)>0){
+        foreach ($sourceItems as $item) {
+            $usedData = [];
+            $findObj = $this->getObjectFromRepository($item, $structure);
+            if (count($findObj) > 0) {
                 continue;
             }
-            // если обьектов нет, то начинаем создавать
-            // для создания обьекта нам нужно пробежать по fields обьекта и если, простой тип,
-            // то украсть и создать,
-            // но если там класс, то надо найти этот класс и вставить его как обьект
-            // так же надо проверять на поле default - если оно есть, то в приоритете брать
-            // с этого поля
-
             $newObj = new $structure['target'];
-            foreach ($structure['fields'] as $field => $property){
-                foreach ($property['source_fields'] as $sourceField){
+            foreach ($structure['fields'] as $field => $property) {
+                $valueToSet = "";
+
+                if (class_exists($property['type'])) {
+                    $searchConfig = [];
+                    $sourceObjectId = $item[$property['source_fields'][0]];
+                    $findingObjFromSource = $this->makeQuery(
+                        "Select * from " . $property['source_table'] . ' where id=' . $sourceObjectId
+                    )[0];
+                    foreach ($property['fields_for_search'] as $key => $fieldsForSearch) {
+                        if (!$searchConfig[$fieldsForSearch]) {
+                            $searchConfig[$fieldsForSearch] = $findingObjFromSource[$key];
+                        } else {
+                            $searchConfig[$fieldsForSearch] .= ' ' . $findingObjFromSource[$key];
+                        }
+                    }
+                    $objRepository = $this->entityManager->getRepository($property['type']);
+                    $findByTarget = $objRepository->findBy($searchConfig);
+                    if (count($findByTarget) <= 0) {
+                        break;
+                    }
+                    $valueToSet = $findByTarget[0];
+
 
                 }
-                $newObj->$property['setter']();
-                dump($field);
-                dd($property);
+                else if ($property['type']==="default"){
+                    $valueToSet = $property['default'];
+                }
+                else {
+                    foreach ($property['source_fields'] as $sourceField) {
+                        $valueToSet === "" ?
+                            $valueToSet = $item[$sourceField] :
+                            $valueToSet = $valueToSet . ' ' . $item[$sourceField];
+                    }
+                }
+                $setter = $property['setter'];
+                $newObj->$setter($valueToSet);
+                $usedData[$field] = $valueToSet;
             }
+            $duplicateObject = $this->findByFromRepository($structure['target'],$usedData);
+            if (count($duplicateObject) > 0) {
+                continue;
+            }
+            $this->entityManager->persist($newObj);
         }
 
+        $this->entityManager->flush();
+
+        $this->io->success('Migrate successfully, table - ' . $entityType);
         return false;
+    }
+
+    private function findByFromRepository(string $classname, array $params): array
+    {
+        $objectRepository =$this->entityManager->getRepository($classname);
+        return $objectRepository->findBy($params);
     }
     private function getObjectFromRepository(array $item,array $structure): array
     {
@@ -201,10 +260,12 @@ class OtherMigrationHospitalCommand extends Command
         // заполнение полей для поиска из репозитория
         foreach ($structure['fields'] as $field => $property){
             if(class_exists($property['type'])){
-                // если нашли класс в конфиге то обрабатываем по другому
+                $findObjectForSearch= $this->findObjectFromRepositoryWithClassTypeById(
+                    $property['type'],
+                    $item[$property['source_fields'][0]]);
+                $findByConfig[$field] = $findObjectForSearch;
             }
             else if((gettype($property['type'])==="string" )or (gettype($property['type'])==="integer")){
-                // т.е. если тип строка или число
                 foreach($property['source_fields'] as $sf){
                     if(isset($findByConfig[$field])){
                         $findByConfig[$field] = $findByConfig[$field].' '.$item[$sf];
@@ -212,12 +273,23 @@ class OtherMigrationHospitalCommand extends Command
                     else{
                         $findByConfig[$field] = $item[$sf];
                     }
-
                 }
-
             }
         }
         return $objRepository->findBy($findByConfig);
+    }
+
+    /**
+     * @param string $classname Classname for get a repository
+     * @param int $id id for search
+     * @return array
+     */
+    private function findObjectFromRepositoryWithClassTypeById(string $classname,int $id):mixed
+    {
+        $repositoryForSearch = $this->entityManager->getRepository($classname);
+        return $repositoryForSearch->findOneBy(
+            ["id" => $id]
+        );
     }
 
 }
