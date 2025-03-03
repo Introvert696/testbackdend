@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Tests\Services\AdaptersService;
 
 use App\Entity\Patients;
@@ -11,20 +12,21 @@ class PatientToPatientResponseDTOTest extends BaseService
         $patient = new Patients();
         $patient->setName("Test");
         $patient->setCardNumber(333);
-        $patientResponse = $this->adapterService->patientToPatientResponseDTO($patient);
+        $patientResponse = $this->adapterService->convertPatientToPatientResponseDTO($patient);
 
         $this->assertNotNull($patientResponse);
-        $this->assertObjectHasProperty('name',$patientResponse);
-        $this->assertObjectHasProperty('card_number',$patientResponse);
-        $this->assertObjectHasProperty('chamber',$patientResponse);
-        $this->assertObjectHasProperty('procedures',$patientResponse);
-        $this->assertSame($patientResponse->getName(),"Test");
-        $this->assertSame($patientResponse->getCard_number(),333);
+        $this->assertObjectHasProperty('name', $patientResponse);
+        $this->assertObjectHasProperty('card_number', $patientResponse);
+        $this->assertObjectHasProperty('chamber', $patientResponse);
+        $this->assertObjectHasProperty('procedures', $patientResponse);
+        $this->assertSame($patientResponse->getName(), "Test");
+        $this->assertSame($patientResponse->getCard_number(), 333);
     }
+
     public function testNotValid(): void
     {
         $patient = new Patients();
-        $patientResponse = $this->adapterService->patientToPatientResponseDTO($patient);
+        $patientResponse = $this->adapterService->convertPatientToPatientResponseDTO($patient);
         $this->assertFalse($patientResponse);
     }
 

@@ -22,48 +22,52 @@ use Symfony\Component\Routing\Attribute\Route;
 final class ProcedureController extends AbstractController
 {
     public function __construct(
-        private readonly ResponseHelper $responseHelper,
-        private readonly ProceduresRepository $proceduresRepository,
+        private readonly ResponseHelper         $responseHelper,
+        private readonly ProceduresRepository   $proceduresRepository,
         private readonly EntityManagerInterface $em,
-        private readonly ValidateService $validateService,
-        private readonly ResponseFabric $responseFabric,
-    ){}
+        private readonly ValidateService        $validateService,
+        private readonly ResponseFabric         $responseFabric,
+    )
+    {
+    }
+
     #[OA\Response(
         response: 200,
         description: 'Return all procedures',
         content: new OA\JsonContent(
-            ref: new Model(type:ResponseDTO::class),
+            ref: new Model(type: ResponseDTO::class),
             type: "object",
             example: [
-                "type"=>"Ok",
-                "code"=>200,
+                "type" => "Ok",
+                "code" => 200,
                 "message" => "Return all procedures",
-                "data"=>[
+                "data" => [
                     [
-                        'id'=>1,
-                        'title'=>'Электрокардиография',
-                        'description'=>'Взять его'
+                        'id' => 1,
+                        'title' => 'Электрокардиография',
+                        'description' => 'Взять его'
                     ],
                     [
-                        'id'=>1,
-                        'title'=>'Электрокардиография',
-                        'description'=>'Взять его'
+                        'id' => 1,
+                        'title' => 'Электрокардиография',
+                        'description' => 'Взять его'
                     ],
                 ]
             ]
         ),
     )]
-    #[OA\Tag(name:"Procedure")]
-    #[Route('/', name: 'index_procedure',methods: ['GET'])]
+    #[OA\Tag(name: "Procedure")]
+    #[Route('/', name: 'index_procedure', methods: ['GET'])]
     public function index(): JsonResponse
     {
         $procedures = $this->proceduresRepository->findAll();
         $response = $this->responseFabric->getResponse(
             ResponseFabric::RESPONSE_TYPE_OK,
             'All procedures',
-            $procedures);
+            $procedures
+        );
 
-        return $this->json($response,$response['code']);
+        return $this->json($response, $response['code']);
     }
 
     /**
@@ -73,38 +77,38 @@ final class ProcedureController extends AbstractController
         response: 200,
         description: 'Return procedure info',
         content: new OA\JsonContent(
-            ref: new Model(type:ResponseDTO::class),
+            ref: new Model(type: ResponseDTO::class),
             type: "object",
             example: [
-                "type"=>"Ok",
-                "code"=>200,
+                "type" => "Ok",
+                "code" => 200,
                 "message" => "Return procedure info",
-                "data"=>
-                [
-                    'id'=>1,
-                    'title'=>'Электрокардиография',
-                    'description'=>'Взять его',
-                    "entityList" => [
-                        [
-                            "queue"=>3,
-                            "status" => true,
-                            "sourceId" => 2,
-                            "sourceType" => "chambers"
-                        ],
-                        [
-                            "queue"=>3,
-                            "status" => true,
-                            "sourceId" => 2,
-                            "sourceType" => "chambers"
-                        ],
-                        [
-                            "queue"=>3,
-                            "status" => true,
-                            "sourceId" => 2,
-                            "sourceType" => "chambers"
-                        ],
-                    ]
-                ],
+                "data" =>
+                    [
+                        'id' => 1,
+                        'title' => 'Электрокардиография',
+                        'description' => 'Взять его',
+                        "entityList" => [
+                            [
+                                "queue" => 3,
+                                "status" => true,
+                                "sourceId" => 2,
+                                "sourceType" => "chambers"
+                            ],
+                            [
+                                "queue" => 3,
+                                "status" => true,
+                                "sourceId" => 2,
+                                "sourceType" => "chambers"
+                            ],
+                            [
+                                "queue" => 3,
+                                "status" => true,
+                                "sourceId" => 2,
+                                "sourceType" => "chambers"
+                            ],
+                        ]
+                    ],
             ]
         ),
     )]
@@ -112,17 +116,17 @@ final class ProcedureController extends AbstractController
         response: 404,
         description: 'Procedure not found',
         content: new OA\JsonContent(
-            ref: new Model(type:ResponseDTO::class),
+            ref: new Model(type: ResponseDTO::class),
             type: "object",
             example: [
-                "type"=>"Not found",
-                "code"=>404,
+                "type" => "Not found",
+                "code" => 404,
                 "message" => "Procedure not found",
             ]
         ),
     )]
-    #[OA\Tag(name:"Procedure")]
-    #[Route('/{id}', name: 'show_procedure',methods: ['GET'])]
+    #[OA\Tag(name: "Procedure")]
+    #[Route('/{id}', name: 'show_procedure', methods: ['GET'])]
     public function show(
         $id,
         AdaptersService $adaptersService,
@@ -130,31 +134,33 @@ final class ProcedureController extends AbstractController
     ): JsonResponse
     {
         $procedure = $this->proceduresRepository->find($id);
-        if(!$procedure){
-            $response =$this->responseFabric->getResponse(
+        if (!$procedure) {
+            $response = $this->responseFabric->getResponse(
                 ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
-                'procedure - not found');
+                'procedure - not found'
+            );
 
-            return $this->json($response,$response['code']);
+            return $this->json($response, $response['code']);
         }
         $procedureResponse = $adaptersService
-            ->procedureToProcedureResponseDTO($procedure);
+            ->convertProcedureToProcedureResponseDTO($procedure);
         $entities = $procedureListRepository->findBy([
-            'source_id'=>$procedure->getId(),
+            'source_id' => $procedure->getId(),
             'status' => 1
         ]);
-        foreach ($entities as $et){
+        foreach ($entities as $et) {
             $procedureResponse->addEntity(
-                $adaptersService->procListToProcListRespDTO($et)
+                $adaptersService->convertProcedureListToProcedureListResponseDTO($et)
             );
         }
 
         $response = $this->responseFabric->getResponse(
             ResponseFabric::RESPONSE_TYPE_OK,
             'Info about procedure',
-            $procedureResponse);
+            $procedureResponse
+        );
 
-        return $this->json($response,$response['code']);
+        return $this->json($response, $response['code']);
     }
 
     /**
@@ -168,8 +174,8 @@ final class ProcedureController extends AbstractController
                 type: 'object',
             ),
             example: [
-                "title"=>"test",
-                "description"=>"test"
+                "title" => "test",
+                "description" => "test"
             ]
         )
     )]
@@ -177,15 +183,15 @@ final class ProcedureController extends AbstractController
         response: 200,
         description: 'Created',
         content: new OA\JsonContent(
-            ref: new Model(type:ResponseDTO::class),
+            ref: new Model(type: ResponseDTO::class),
             type: "object",
             example: [
-                "type"=>"Created",
-                "code"=>200,
+                "type" => "Created",
+                "code" => 200,
                 "message" => "Procedure has been create",
                 "data" => [
-                    "id"=>1,
-                    "title"=>"test",
+                    "id" => 1,
+                    "title" => "test",
                     "description" => "test"
                 ]
             ]
@@ -195,11 +201,11 @@ final class ProcedureController extends AbstractController
         response: 422,
         description: 'Check fields',
         content: new OA\JsonContent(
-            ref: new Model(type:ResponseDTO::class),
+            ref: new Model(type: ResponseDTO::class),
             type: "object",
             example: [
-                "type"=>"Error",
-                "code"=>422,
+                "type" => "Error",
+                "code" => 422,
                 "message" => "Check your fields",
             ]
         ),
@@ -208,43 +214,45 @@ final class ProcedureController extends AbstractController
         response: 409,
         description: 'Conflict',
         content: new OA\JsonContent(
-            ref: new Model(type:ResponseDTO::class),
+            ref: new Model(type: ResponseDTO::class),
             type: "object",
             example: [
-                "type"=>"Conflict",
-                "code"=>409,
+                "type" => "Conflict",
+                "code" => 409,
                 "message" => "Title is exists",
-                "data"=>[
-                    "id"=>19,
-                    "title"=>'title',
+                "data" => [
+                    "id" => 19,
+                    "title" => 'title',
                     "description" => "desc"
                 ]
             ]
         ),
     )]
-    #[OA\Tag(name:"Procedure")]
-    #[Route( name: 'store_procedure',methods: ['POST'])]
+    #[OA\Tag(name: "Procedure")]
+    #[Route(name: 'store_procedure', methods: ['POST'])]
     public function store(Request $request): JsonResponse
     {
         $requestContent = $request->getContent();
-        $validatedProcedure = $this->validateService->procedures(
-            $this->responseHelper->checkRequest($requestContent,'App\Entity\Procedures')
+        $validatedProcedure = $this->validateService->validateProcedures(
+            $this->responseHelper->checkRequest($requestContent, 'App\Entity\Procedures')
         );
-        if(!$validatedProcedure){
+        if (!$validatedProcedure) {
             $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_VALID);
+                ResponseFabric::RESPONSE_TYPE_NOT_VALID
+            );
 
-            return $this->json($response,$response['code']);
+            return $this->json($response, $response['code']);
         }
         $issetProcedure = $this->proceduresRepository->findBy([
             'title' => $validatedProcedure->getTitle()
         ]);
-        if($issetProcedure){
+        if ($issetProcedure) {
             $response = $this->responseFabric->getResponse(
                 ResponseFabric::RESPONSE_TYPE_CONFLICT,
-                data: $this->responseHelper->first($issetProcedure));
+                data: $this->responseHelper->getFirstElement($issetProcedure)
+            );
 
-            return $this->json($response,$response['code']);
+            return $this->json($response, $response['code']);
         }
         $this->em->persist($validatedProcedure);
         $this->em->flush();
@@ -252,9 +260,10 @@ final class ProcedureController extends AbstractController
         $response = $this->responseFabric->getResponse(
             ResponseFabric::RESPONSE_TYPE_OK,
             'Procedure has been create',
-            $validatedProcedure);
+            $validatedProcedure
+        );
 
-        return $this->json($response,$response['code']);
+        return $this->json($response, $response['code']);
     }
 
     /**
@@ -268,8 +277,8 @@ final class ProcedureController extends AbstractController
                 type: 'object',
             ),
             example: [
-                "title"=>"Test",
-                "description"=>"Test desc"
+                "title" => "Test",
+                "description" => "Test desc"
             ]
         )
     )]
@@ -277,11 +286,11 @@ final class ProcedureController extends AbstractController
         response: 404,
         description: 'Procedure not found',
         content: new OA\JsonContent(
-            ref: new Model(type:ResponseDTO::class),
+            ref: new Model(type: ResponseDTO::class),
             type: "object",
             example: [
-                "type"=>"Not found",
-                "code"=>404,
+                "type" => "Not found",
+                "code" => 404,
                 "message" => "Procedure not found",
             ]
         ),
@@ -290,11 +299,11 @@ final class ProcedureController extends AbstractController
         response: 200,
         description: 'Procedure has been updated',
         content: new OA\JsonContent(
-            ref: new Model(type:ResponseDTO::class),
+            ref: new Model(type: ResponseDTO::class),
             type: "object",
             example: [
-                "type"=>"Update",
-                "code"=>200,
+                "type" => "Update",
+                "code" => 200,
                 "message" => "Procedure has been updated",
                 "data" => [
                     "id" => 1,
@@ -304,34 +313,37 @@ final class ProcedureController extends AbstractController
             ]
         ),
     )]
-    #[OA\Tag(name:"Procedure")]
+    #[OA\Tag(name: "Procedure")]
     // выводиться исключение если данные уже есть
-    #[Route('/{id}', name: 'update_procedure',methods: ['PATCH'])]
-    public function update(Request $request,$id): JsonResponse
+    #[Route('/{id}', name: 'update_procedure', methods: ['PATCH'])]
+    public function update(Request $request, $id): JsonResponse
     {
         $content = $request->getContent();
         $procedure = $this->proceduresRepository->find($id);
-        if(!$procedure) {
+        if (!$procedure) {
             $response = $this->responseFabric->getResponse(
                 ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
-                'Procedure not found');
+                'Procedure not found'
+            );
 
-            return $this->json($response,$response['code']);
+            return $this->json($response, $response['code']);
         }
-        if(!$content){
+        if (!$content) {
             $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_VALID);
+                ResponseFabric::RESPONSE_TYPE_NOT_VALID
+            );
 
-            return $this->json($response,$response['code']);
+            return $this->json($response, $response['code']);
         }
-        $validatedProcedure = $this->validateService->procedures(
-            $this->responseHelper->checkRequest($content,'App\Entity\Procedures')
+        $validatedProcedure = $this->validateService->validateProcedures(
+            $this->responseHelper->checkRequest($content, 'App\Entity\Procedures')
         );
-        if(!$validatedProcedure){
+        if (!$validatedProcedure) {
             $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_VALID);
+                ResponseFabric::RESPONSE_TYPE_NOT_VALID
+            );
 
-            return $this->json($response,$response['code']);
+            return $this->json($response, $response['code']);
         }
         $procedure->setTitle($validatedProcedure->getTitle());
         $procedure->setDescription($validatedProcedure->getDescription());
@@ -340,20 +352,21 @@ final class ProcedureController extends AbstractController
         $response = $this->responseFabric->getResponse(
             ResponseFabric::RESPONSE_TYPE_OK,
             'Procedure has been updated',
-            $procedure);
+            $procedure
+        );
 
-        return $this->json($response,$response['code']);
+        return $this->json($response, $response['code']);
     }
 
     #[OA\Response(
         response: 404,
         description: 'Procedure not found',
         content: new OA\JsonContent(
-            ref: new Model(type:ResponseDTO::class),
+            ref: new Model(type: ResponseDTO::class),
             type: "object",
             example: [
-                "type"=>"Not found",
-                "code"=>404,
+                "type" => "Not found",
+                "code" => 404,
                 "message" => "Procedure not found",
             ]
         ),
@@ -362,34 +375,36 @@ final class ProcedureController extends AbstractController
         response: 200,
         description: 'Delete',
         content: new OA\JsonContent(
-            ref: new Model(type:ResponseDTO::class),
+            ref: new Model(type: ResponseDTO::class),
             type: "object",
             example: [
-                "type"=>"Delete",
-                "code"=>200,
+                "type" => "Delete",
+                "code" => 200,
                 "message" => "Procedure has been delete",
             ]
         ),
     )]
-    #[OA\Tag(name:"Procedure")]
-    #[Route('/{id}', name: 'delete_procedure',methods: ['DELETE'])]
+    #[OA\Tag(name: "Procedure")]
+    #[Route('/{id}', name: 'delete_procedure', methods: ['DELETE'])]
     public function delete($id): JsonResponse
     {
         $procedure = $this->proceduresRepository->find($id);
-        if(!$procedure){
+        if (!$procedure) {
             $response = $this->responseFabric->getResponse(
                 ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
-                'Procedure not found');
+                'Procedure not found'
+            );
 
-            return $this->json($response,$response['code']);
+            return $this->json($response, $response['code']);
         }
         $this->em->remove($procedure);
         $this->em->flush();
 
         $response = $this->responseFabric->getResponse(
             ResponseFabric::RESPONSE_TYPE_OK,
-            'Procedure has been delete');
+            'Procedure has been delete'
+        );
 
-        return $this->json($response,$response['code']);
+        return $this->json($response, $response['code']);
     }
 }

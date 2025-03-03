@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Tests\Services\AdaptersService;
 
 use App\Entity\ProcedureList;
@@ -10,17 +11,18 @@ class ProcListToProcListRespDTOTest extends BaseService
     {
         $pl = $this->procedureListRepository->find(1);
 
-        $procRespDTO = $this->adapterService->procListToProcListRespDTO($pl);
+        $procRespDTO = $this->adapterService->convertProcedureListToProcedureListResponseDTO($pl);
 
-        $this->assertObjectHasProperty('queue',$procRespDTO);
-        $this->assertObjectHasProperty('source_id',$procRespDTO);
-        $this->assertObjectHasProperty('source_type',$procRespDTO);
-        $this->assertObjectHasProperty('status',$procRespDTO);
+        $this->assertObjectHasProperty('queue', $procRespDTO);
+        $this->assertObjectHasProperty('source_id', $procRespDTO);
+        $this->assertObjectHasProperty('source_type', $procRespDTO);
+        $this->assertObjectHasProperty('status', $procRespDTO);
     }
+
     public function testNotValid(): void
     {
         $pl = new ProcedureList();
-        $procRespDTO = $this->adapterService->procListToProcListRespDTO($pl);
+        $procRespDTO = $this->adapterService->convertProcedureListToProcedureListResponseDTO($pl);
         $this->assertFalse($procRespDTO);
     }
 }

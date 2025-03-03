@@ -11,9 +11,9 @@ class CreateTest extends BaseService
 
     public function testMain(): void
     {
-        $test = $this->chamberPatients->create(new Patients(),new Chambers());
+        $test = $this->chamberPatients->createChamberPatients(new Patients(), new Chambers());
 
-        $this->assertObjectHasProperty('chambers',$test);
-        $this->assertObjectHasProperty('patients',$test);
+        $this->assertObjectHasProperty('chambers', $test);
+        $this->assertObjectHasProperty('patients', $test);
     }
 }

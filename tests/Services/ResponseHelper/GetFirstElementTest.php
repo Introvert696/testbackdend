@@ -1,10 +1,11 @@
 <?php
+
 namespace App\Tests\Services\ResponseHelper;
 
 use App\Entity\Chambers;
 use App\Tests\Services\BaseService;
 
-class FirstTest extends BaseService
+class GetFirstElementTest extends BaseService
 {
     public function testMain(): void
     {
@@ -12,14 +13,15 @@ class FirstTest extends BaseService
             new Chambers(),
             new Chambers()
         ];
-        $response = $this->jsonResopnseHelper->first($data);
-        $this->assertSame('App\Entity\Chambers',$response::class);
+        $response = $this->jsonResopnseHelper->getFirstElement($data);
+        $this->assertSame('App\Entity\Chambers', $response::class);
     }
+
     public function testEmptyArray(): void
     {
-        $data = [ ];
+        $data = [];
 
-        $response = $this->jsonResopnseHelper->first($data);
+        $response = $this->jsonResopnseHelper->getFirstElement($data);
         $this->assertFalse($response);
     }
 

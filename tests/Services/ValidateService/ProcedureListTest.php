@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Tests\Services\ValidateService;
 
 use App\Entity\ProcedureList;
@@ -10,13 +11,14 @@ class ProcedureListTest extends BaseService
     public function testNotValid(): void
     {
         $procedureList = new ProcedureList();
-        $response = $this->validateService->procedureList($procedureList);
+        $response = $this->validateService->validateProcedureList($procedureList);
         $this->assertFalse($response);
     }
+
     public function testValid(): void
     {
         $procList = $this->procedureListRepository->find(2);
-        $response = $this->validateService->procedureList($procList);
+        $response = $this->validateService->validateProcedureList($procList);
         $this->assertNotNull($response);
     }
 }

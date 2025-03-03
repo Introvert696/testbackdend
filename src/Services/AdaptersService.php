@@ -5,8 +5,8 @@ namespace App\Services;
 use App\DTO\Adapter\ChamberProcedureDTO;
 use App\DTO\Adapter\PatientResponseDTO;
 use App\DTO\Adapter\ProcedureResponseDTO;
-use App\DTO\Adapter\ProcListRespDTO;
-use App\DTO\Chamber\ProcListDTO;
+use App\DTO\Adapter\ProcedureListResponseDTO;
+use App\DTO\Chamber\ProcedureListDTO;
 use App\Entity\Patients;
 use App\Entity\ProcedureList;
 use App\Entity\Procedures;
@@ -16,45 +16,49 @@ class AdaptersService
 {
     public function __construct(
         private readonly ProceduresRepository $proceduresRepository,
-        private readonly ValidateService $validator,
-    ){}
-    public function patientToPatientResponseDTO(
-        object $patients,
-        $procList = null
-    ): PatientResponseDTO| bool
+        private readonly ValidateService      $validator,
+    )
     {
-        $patients = $this->validator->patients($patients);
-        if(!$patients){
+    }
+
+    public function convertPatientToPatientResponseDTO(
+        object $patients,
+               $procList = null
+    ): PatientResponseDTO|bool
+    {
+        $patients = $this->validator->validatePatients($patients);
+        if (!$patients) {
             return false;
         }
         $patientResponse = new PatientResponseDTO();
-        if($patients->getId()){
+        if ($patients->getId()) {
             $patientResponse->setId($patients->getId());
         }
         $patientResponse->setName($patients->getName());
         $patientResponse->setCardNumber($patients->getCardNumber());
 
-        if ($patients->getChambersPatients()){
+        if ($patients->getChambersPatients()) {
             $patientResponse->setChamber(
                 $patients->getChambersPatients()->getChambers()->getId()
             );
         }
-        if ($procList){
-            foreach ($procList as $pl){
+        if ($procList) {
+            foreach ($procList as $pl) {
                 $patientResponse->addProc(
-                    $this->procedureListToChamberProcedureDto($pl)
+                    $this->convertProcedureListToChamberProcedureDto($pl)
                 );
             }
         }
 
         return $patientResponse;
     }
-    public function procedureListToChamberProcedureDto(
+
+    public function convertProcedureListToChamberProcedureDto(
         ProcedureList $procList
     ): ChamberProcedureDTO|false
     {
-        $pl = $this->validator->procedureList($procList);
-        if(!$pl){
+        $pl = $this->validator->validateProcedureList($procList);
+        if (!$pl) {
             return false;
         }
         $procListDTO = new ChamberProcedureDTO();
@@ -66,13 +70,14 @@ class AdaptersService
 
         return $procListDTO;
     }
-    public function procListDtoToProcList(
-        ProcListDTO $procList,
-        $id
+
+    public function convertProcedureListDtoToProcedureList(
+        ProcedureListDTO $procList,
+                         $id
     ): ProcedureList|false
     {
-        $procList = $this->validator->procListDTO($procList);
-        if(!$procList){
+        $procList = $this->validator->validateProcedureListDTO($procList);
+        if (!$procList) {
             return false;
         }
         $procedure = $this->proceduresRepository->find($procList->getProcedureId());
@@ -85,16 +90,17 @@ class AdaptersService
 
         return $procedureList;
     }
-    public function procedureToProcedureResponseDTO(
+
+    public function convertProcedureToProcedureResponseDTO(
         Procedures $procedures
     ): ProcedureResponseDTO|false
     {
         $newProcResponse = new ProcedureResponseDTO();
-        $procedures= $this->validator->procedures($procedures);
-        if(!$procedures){
+        $procedures = $this->validator->validateProcedures($procedures);
+        if (!$procedures) {
             return false;
         }
-        if($procedures->getId()){
+        if ($procedures->getId()) {
             $newProcResponse->setId($procedures->getId());
         }
         $newProcResponse->setTitle($procedures->getTitle());
@@ -102,15 +108,16 @@ class AdaptersService
 
         return $newProcResponse;
     }
-    public function procListToProcListRespDTO(
+
+    public function convertProcedureListToProcedureListResponseDTO(
         ProcedureList $procList
-    ): ProcListRespDTO|false
+    ): ProcedureListResponseDTO|false
     {
-        $procList = $this->validator->procedureList($procList);
-        if(!$procList){
+        $procList = $this->validator->validateProcedureList($procList);
+        if (!$procList) {
             return false;
         }
-        $procListResp = new ProcListRespDTO();
+        $procListResp = new ProcedureListResponseDTO();
         $procListResp->setStatus($procList->getStatus());
         $procListResp->setQueue($procList->getQueue());
         $procListResp->setSourceId($procList->getSourceId());

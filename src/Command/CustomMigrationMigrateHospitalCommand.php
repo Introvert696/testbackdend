@@ -59,6 +59,7 @@ class CustomMigrationMigrateHospitalCommand extends Command
         ]
     ];
     private SymfonyStyle $io;
+
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
     )
@@ -112,18 +113,18 @@ class CustomMigrationMigrateHospitalCommand extends Command
         if (count($sourcePatients) <= 0) {
             return false;
         }
-        foreach ($sourcePatients as $sp){
+        foreach ($sourcePatients as $sp) {
             $patientsRepository = $this->entityManager->getRepository(Patients::class);
             $foundedPatients = $patientsRepository->findBy([
-                "name" =>$sp['name'].' '.$sp['last_name'],
+                "name" => $sp['name'] . ' ' . $sp['last_name'],
                 "card_number" => $sp['card_number']
             ]);
-            if(count($foundedPatients)>0){
-                $this->io->text("Patient exists - ".$sp['name'].' '.$sp['last_name']);
+            if (count($foundedPatients) > 0) {
+                $this->io->text("Patient exists - " . $sp['name'] . ' ' . $sp['last_name']);
                 continue;
             }
             $newPatient = new Patients();
-            $newPatient->setName($sp['name'].' '.$sp['last_name']);
+            $newPatient->setName($sp['name'] . ' ' . $sp['last_name']);
             $newPatient->setCardNumber($sp['card_number']);
 
             $this->entityManager->persist($newPatient);
@@ -131,8 +132,10 @@ class CustomMigrationMigrateHospitalCommand extends Command
         }
         $this->entityManager->flush();
         $this->io->success('Patients has been migrate');
+
         return true;
     }
+
     private function createWard(string $tableName, array $structure): bool
     {
         $columns = implode(",", $structure);
@@ -141,14 +144,14 @@ class CustomMigrationMigrateHospitalCommand extends Command
             return false;
         }
 
-        foreach ($sourceWards as $sw){
+        foreach ($sourceWards as $sw) {
             $chambersRepository = $this->entityManager->getRepository(Chambers::class);
 
             $foundChambers = $chambersRepository->findBy([
-               "number" => $sw['ward_number']
+                "number" => $sw['ward_number']
             ]);
-            if(count($foundChambers)>0){
-                $this->io->text("Chamber exists, number - ".$sw['ward_number']);
+            if (count($foundChambers) > 0) {
+                $this->io->text("Chamber exists, number - " . $sw['ward_number']);
                 continue;
             }
             $newChamber = new Chambers();
@@ -158,8 +161,10 @@ class CustomMigrationMigrateHospitalCommand extends Command
         }
         $this->entityManager->flush();
         $this->io->success('Chambers has been migrate');
+
         return false;
     }
+
     private function createHospitalization(string $tableName, array $structure): bool
     {
         $columns = implode(",", $structure);
@@ -173,24 +178,24 @@ class CustomMigrationMigrateHospitalCommand extends Command
             $patientsRepository = $this->entityManager->getRepository(Patients::class);
             $chamberRepository = $this->entityManager->getRepository(Chambers::class);
 
-            $patient = $this->makeQuery("Select name,last_name,card_number from patient where id=".$hz['patient_id']);
-            if(count($patient)<=0){
+            $patient = $this->makeQuery("Select name,last_name,card_number from patient where id=" . $hz['patient_id']);
+            if (count($patient) <= 0) {
                 $this->io->text("Source patient not found - skip");
                 continue;
             }
             $foundPatient = $patientsRepository->findBy([
-                "name" => $patient[0]['name'].' '.$patient[0]['last_name'],
+                "name" => $patient[0]['name'] . ' ' . $patient[0]['last_name'],
                 "card_number" => $patient[0]['card_number'],
             ]);
-            if(count($foundPatient)<=0){
+            if (count($foundPatient) <= 0) {
                 //если пациент не найден, то не создаем запись
                 $this->io->text("Target patient not found - skip");
                 continue;
             }
             // тут ищем сначала палату из сурса бд, что бы узнать какой у нее был номер
-            $chambers = $this->makeQuery("Select ward_number from ward where id=".$hz['ward_id']);
+            $chambers = $this->makeQuery("Select ward_number from ward where id=" . $hz['ward_id']);
             // если в Сурс бд нет такой палаты, то скипаем
-            if(count($chambers)<=0){
+            if (count($chambers) <= 0) {
                 $this->io->text("Source chambers not found - skip");
                 continue;
             }
@@ -199,7 +204,7 @@ class CustomMigrationMigrateHospitalCommand extends Command
                 "number" => $chambers[0]['ward_number']
             ]);
             // если ее нет, то скипаем
-            if(count($foundChamber)<=0){
+            if (count($foundChamber) <= 0) {
                 // если не найдена палата то тоже не создаем запись
                 $this->io->text("Chamber not found - skip");
                 continue;;
@@ -210,7 +215,7 @@ class CustomMigrationMigrateHospitalCommand extends Command
                 "patients" => $foundPatient[0]
             ]);
             // если она есть то скипаем
-            if(count($foundChamberPatients)>0){
+            if (count($foundChamberPatients) > 0) {
                 $this->io->text("ChamberPatients - has exists");
                 continue;
             }
@@ -223,8 +228,10 @@ class CustomMigrationMigrateHospitalCommand extends Command
         }
         $this->entityManager->flush();
         $this->io->success('ChamberPatients has been migrate');
+
         return true;
     }
+
     private function createProcedure(string $tableName, array $structure): bool
     {
         $columns = implode(",", $structure);
@@ -232,15 +239,15 @@ class CustomMigrationMigrateHospitalCommand extends Command
         if (count($sourceProcedures) <= 0) {
             return false;
         }
-        foreach ($sourceProcedures as $sp){
+        foreach ($sourceProcedures as $sp) {
             $procedureRepository = $this->entityManager->getRepository(Procedures::class);
             $foundProcedure = $procedureRepository->findBy([
                 "title" => $sp['name'],
                 "description" => $sp['description']
             ]);
             // если такая процедура найдена, то скипаем
-            if(count($foundProcedure)>0){
-                $this->io->text('Procedure is exists, title - '.$sp['name']);
+            if (count($foundProcedure) > 0) {
+                $this->io->text('Procedure is exists, title - ' . $sp['name']);
                 continue;
             }
             $newProcedure = new Procedures();
@@ -251,6 +258,7 @@ class CustomMigrationMigrateHospitalCommand extends Command
         }
         $this->entityManager->flush();
         $this->io->success('Procedures has been migrated');
+
         return true;
     }
 
@@ -263,11 +271,11 @@ class CustomMigrationMigrateHospitalCommand extends Command
         $procedureRepository = $this->entityManager->getRepository(Procedures::class);
 
 
-        $sourceWardProcedures= $this->getRowsFromTable($tableName, $columns);
-        foreach($sourceWardProcedures as $swp){
-            $sourceFoundProcedure = $this->makeQuery("Select * from procedure where id=".$swp['procedure_id']);
-            $sourceFoundWard = $this->makeQuery("Select ward_number from ward where id=".$swp['ward_id']);
-            if(count($sourceFoundProcedure)<=0){
+        $sourceWardProcedures = $this->getRowsFromTable($tableName, $columns);
+        foreach ($sourceWardProcedures as $swp) {
+            $sourceFoundProcedure = $this->makeQuery("Select * from procedure where id=" . $swp['procedure_id']);
+            $sourceFoundWard = $this->makeQuery("Select ward_number from ward where id=" . $swp['ward_id']);
+            if (count($sourceFoundProcedure) <= 0) {
                 continue;
             }
 
@@ -275,23 +283,23 @@ class CustomMigrationMigrateHospitalCommand extends Command
                 "title" => $sourceFoundProcedure[0]['name'],
                 "description" => $sourceFoundProcedure[0]['description']
             ]);
-            if(count($foundProcedures)<=0){
+            if (count($foundProcedures) <= 0) {
                 $this->io->text('Procedure not found in target db - skip');
                 continue;
             }
             $findChamber = $chamberRepository->findBy([
                 'number' => $sourceFoundWard[0]['ward_number']
             ]);
-            if(count($findChamber)<=0){
+            if (count($findChamber) <= 0) {
                 $this->io->text('Chamber not found - skip');
                 continue;
             }
             $findProcedureList = $procedureListRepository->findBy([
-                'procedures'=> $foundProcedures[0],
+                'procedures' => $foundProcedures[0],
                 'source_type' => 'chambers',
                 'source_id' => $swp['ward_id']
             ]);
-            if(count($findProcedureList)>0){
+            if (count($findProcedureList) > 0) {
                 $this->io->text("Procedure list is exists - skip");
                 continue;
             }
@@ -306,8 +314,10 @@ class CustomMigrationMigrateHospitalCommand extends Command
         }
         $this->entityManager->flush();
         $this->io->success('Ward_procedure has been migrated');
+
         return false;
     }
+
     private function makeQuery(string $sql): array
     {
         $dsn = 'pgsql:host=localhost;port=5433;dbname=hospital;user=symfony_user;password=symfony_password';
