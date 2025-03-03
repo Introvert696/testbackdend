@@ -31,31 +31,34 @@ final class ChamberController extends AbstractController
         private readonly AdaptersService         $adaptersService,
         private readonly ValidateService         $validateService,
         private readonly ResponseFabric          $responseFabric,
-    ){}
+    )
+    {
+    }
+
     #[OA\Response(
-            response: 200,
-            description: 'Return all chambers',
-            content: new OA\JsonContent(
-                ref: new Model(type:ResponseDTO::class),
-                type: 'object',
-                example: [
-                    "type"=>"ok",
-                    "code"=>200,
-                    "message" => "chamber and patients",
-                    "data" =>[
-                       [
-                           "id"=>1,
-                           "number" =>233,
-                       ],
-                        [
-                            "id"=>1,
-                            "number" =>233,
-                        ]
+        response: 200,
+        description: 'Return all chambers',
+        content: new OA\JsonContent(
+            ref: new Model(type: ResponseDTO::class),
+            type: 'object',
+            example: [
+                "type" => "ok",
+                "code" => 200,
+                "message" => "chamber and patients",
+                "data" => [
+                    [
+                        "id" => 1,
+                        "number" => 233,
+                    ],
+                    [
+                        "id" => 1,
+                        "number" => 233,
                     ]
                 ]
+            ]
         )
     )]
-    #[OA\Tag(name:"Chamber")]
+    #[OA\Tag(name: "Chamber")]
     #[Route('/', name: 'index_chambers', methods: ["GET"])]
     public function index(): JsonResponse
     {
@@ -63,23 +66,24 @@ final class ChamberController extends AbstractController
             ResponseFabric::RESPONSE_TYPE_OK,
             'All chambers',
             $this->chambersRepository->findAll());
-        return $this->json($response,$response['code']);
+
+        return $this->json($response, $response['code']);
     }
 
     #[OA\Response(
         response: 200,
         description: 'Return all chambers',
         content: new OA\JsonContent(
-            ref: new Model(type:ResponseDTO::class),
+            ref: new Model(type: ResponseDTO::class),
             type: "object",
             example: [
-                "type"=>"ok",
-                "code"=>200,
+                "type" => "ok",
+                "code" => 200,
                 "message" => "chamber and he patients",
-                "data" =>[
-                    "id"=>1,
-                    "number" =>233,
-                    "patients" =>[]
+                "data" => [
+                    "id" => 1,
+                    "number" => 233,
+                    "patients" => []
                 ]
             ]
         ),
@@ -88,31 +92,32 @@ final class ChamberController extends AbstractController
         response: 404,
         description: 'Return all chambers',
         content: new OA\JsonContent(
-            ref: new Model(type:ResponseDTO::class),
+            ref: new Model(type: ResponseDTO::class),
             type: "object",
             example: [
-                "type"=>"Not found",
-                "code"=>404,
+                "type" => "Not found",
+                "code" => 404,
                 "message" => "Chamber not found",
             ]
         ),
     )]
-    #[OA\Tag(name:"Chamber")]
-    #[Route('/{id}', name: 'show_chambers',requirements: ['id'=>Requirement::DIGITS], methods: ["GET"])]
+    #[OA\Tag(name: "Chamber")]
+    #[Route('/{id}', name: 'show_chambers', requirements: ['id' => Requirement::DIGITS], methods: ["GET"])]
     public function show(int $id): JsonResponse
     {
         $chamberResponse = new ChamberResponseDTO();
         $patients = [];
         $foundChamber = $this->chambersRepository->find($id);
-        if(!$foundChamber){
+        if (!$foundChamber) {
             $response = $this->responseFabric->getResponse(
                 ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
                 'Chamber - not found');
-            return $this->json($response,$response['code']);
+
+            return $this->json($response, $response['code']);
         }
         $chamberPatients = $foundChamber->getChambersPatients()->getValues();
-        if($chamberPatients){
-            foreach ($chamberPatients as $cp){
+        if ($chamberPatients) {
+            foreach ($chamberPatients as $cp) {
                 $patients[] = $cp->getPatients();
             }
             $chamberResponse->setPatients($patients);
@@ -123,80 +128,83 @@ final class ChamberController extends AbstractController
             ResponseFabric::RESPONSE_TYPE_OK,
             'Info about chamber',
             $chamberResponse);
-        return $this->json($response,$response['code']);
+
+        return $this->json($response, $response['code']);
     }
 
     #[OA\Response(
         response: 200,
         description: 'Return all chambers',
         content: new OA\JsonContent(
-            ref: new Model(type:ResponseDTO::class),
+            ref: new Model(type: ResponseDTO::class),
             type: "object",
             example: [
-                "type"=>"ok",
-                "code"=>200,
+                "type" => "ok",
+                "code" => 200,
                 "message" => "chamber and he patients",
-                "data" =>[
-                    "id"=>1,
-                    "number" =>233,
-                    "data" =>[
+                "data" => [
+                    "id" => 1,
+                    "number" => 233,
+                    "data" => [
                         [
-                            "id"=>1,
-                            "title" =>'Эхокардиография',
-                            "desc" =>'Взять ',
-                            "queue" =>1,
-                            "status" =>false
+                            "id" => 1,
+                            "title" => 'Эхокардиография',
+                            "desc" => 'Взять ',
+                            "queue" => 1,
+                            "status" => false
                         ],
                         [
-                            "id"=>1,
-                            "title" =>'Эхокардиография',
-                            "desc" =>'Взять ',
-                            "queue" =>1,
-                            "status" =>false
+                            "id" => 1,
+                            "title" => 'Эхокардиография',
+                            "desc" => 'Взять ',
+                            "queue" => 1,
+                            "status" => false
                         ]
                     ]
                 ]
             ]
         ),
     )]
-    #[OA\Tag(name:"Chamber")]
+    #[OA\Tag(name: "Chamber")]
     #[OA\Response(
         response: 404,
         description: 'Not found',
         content: new OA\JsonContent(
-            ref: new Model(type:ResponseDTO::class),
+            ref: new Model(type: ResponseDTO::class),
             type: "object",
             example: [
-                "type"=>"Not Found",
-                "code"=>404,
+                "type" => "Not Found",
+                "code" => 404,
                 "message" => "Chamber procedures",
             ]
         ),
     )]
-    #[Route('/{id}/procedures', name: 'show_chambers_procedures',requirements: ['id'=>Requirement::DIGITS], methods: ["GET"])]
+    #[Route('/{id}/procedures', name: 'show_chambers_procedures', requirements: ['id' => Requirement::DIGITS], methods: ["GET"])]
     public function showProcedures(int $id): JsonResponse
     {
+        // сделать проверку на существование палаты по id
         $chamberProcedures = [];
         $foundProcedureLists = $this->procedureListRepository->findBy([
-            'source_type'=>'chambers',
-            'source_id'=>$id
+            'source_type' => 'chambers',
+            'source_id' => $id
         ]);
-        foreach ($foundProcedureLists as $pl){
+        foreach ($foundProcedureLists as $pl) {
             $chamberProcedures[] = $this->adaptersService
                 ->procedureListToChamberProcedureDTO($pl);
         }
-        if(!$chamberProcedures){
+        if (!$chamberProcedures) {
             $response = $this->responseFabric->getResponse(
                 ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
-                'Patient - not found');
-            return $this->json($response,$response['code']);
+                'Procedures - not found');
+
+            return $this->json($response, $response['code']);
         }
         $response = $this->responseFabric->getResponse(
             ResponseFabric::RESPONSE_TYPE_OK,
-            'Chamber - '.$id.', have next procedure:' ,
+            'Chamber - ' . $id . ', have next procedure:',
             $chamberProcedures);
-        return $this->json($response,$response['code']);
 
+        return $this->json($response, $response['code']);
     }
 
     /**
@@ -212,13 +220,13 @@ final class ChamberController extends AbstractController
             example: [
                 [
                     'procedure_id' => 1,
-                    'queue'=>3,
-                    'status'=>true
+                    'queue' => 3,
+                    'status' => true
                 ],
                 [
                     'procedure_id' => 2,
-                    'queue'=>3,
-                    'status'=>true
+                    'queue' => 3,
+                    'status' => true
                 ],
             ]
         )
@@ -227,11 +235,11 @@ final class ChamberController extends AbstractController
         response: 404,
         description: 'Not found',
         content: new OA\JsonContent(
-            ref: new Model(type:ResponseDTO::class),
+            ref: new Model(type: ResponseDTO::class),
             type: "object",
             example: [
-                "type"=>"Not Found",
-                "code"=>404,
+                "type" => "Not Found",
+                "code" => 404,
                 "message" => "Chambers not found",
             ]
         ),
@@ -240,11 +248,11 @@ final class ChamberController extends AbstractController
         response: 402,
         description: 'Fields Error',
         content: new OA\JsonContent(
-            ref: new Model(type:ResponseDTO::class),
+            ref: new Model(type: ResponseDTO::class),
             type: "object",
             example: [
-                "type"=>"Error",
-                "code"=>404,
+                "type" => "Error",
+                "code" => 404,
                 "message" => "Check fields",
             ]
         ),
@@ -253,17 +261,17 @@ final class ChamberController extends AbstractController
         response: 200,
         description: 'Updated',
         content: new OA\JsonContent(
-            ref: new Model(type:ResponseDTO::class),
+            ref: new Model(type: ResponseDTO::class),
             type: "object",
             example: [
-                "type"=>"Ok",
-                "code"=>200,
+                "type" => "Ok",
+                "code" => 200,
                 "message" => "Procedure list has been update",
             ]
         ),
     )]
-    #[OA\Tag(name:"Chamber")]
-    #[Route('/{id}/procedures', name: 'update_chambers_procedures',requirements: ['id'=>Requirement::DIGITS], methods: ["POST"])]
+    #[OA\Tag(name: "Chamber")]
+    #[Route('/{id}/procedures', name: 'update_chambers_procedures', requirements: ['id' => Requirement::DIGITS], methods: ["POST"])]
     public function updateProcedures(Request $request, int $id): JsonResponse
     {
         $chamberProcedures = [];
@@ -278,13 +286,14 @@ final class ChamberController extends AbstractController
             $response = $this->responseFabric->getResponse(
                 ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
                 'Chamber - not found');
-            return $this->json($response,$response['code']);
+
+            return $this->json($response, $response['code']);
         }
         if (!$checkedProcListDTOs) {
             $response = $this->responseFabric->getResponse(
                 ResponseFabric::RESPONSE_TYPE_NOT_VALID);
 
-            return $this->json($response,$response['code']);
+            return $this->json($response, $response['code']);
         }
         if ($foundProcedureLists) {
             foreach ($foundProcedureLists as $pl) {
@@ -298,7 +307,7 @@ final class ChamberController extends AbstractController
                 $response = $this->responseFabric->getResponse(
                     ResponseFabric::RESPONSE_TYPE_NOT_VALID);
 
-                return $this->json($response,$response['code']);
+                return $this->json($response, $response['code']);
             }
             $procedureList = $this->adaptersService
                 ->procListDtoToProcList($checkedProcedureList, $id);
@@ -324,20 +333,19 @@ final class ChamberController extends AbstractController
             items: new OA\Items(
                 type: 'object',
             ),
-            example:
-                [
-                    'number' => 1,
-                ],
+            example: [
+                'number' => 1,
+            ],
         ))]
     #[OA\Response(
         response: 402,
         description: 'Error',
         content: new OA\JsonContent(
-            ref: new Model(type:ResponseDTO::class),
+            ref: new Model(type: ResponseDTO::class),
             type: "object",
             example: [
-                "type"=>"Error",
-                "code"=>402,
+                "type" => "Error",
+                "code" => 402,
                 "message" => "Check request body",
             ]
         ),
@@ -346,15 +354,15 @@ final class ChamberController extends AbstractController
         response: 400,
         description: 'Error',
         content: new OA\JsonContent(
-            ref: new Model(type:ResponseDTO::class),
+            ref: new Model(type: ResponseDTO::class),
             type: "object",
             example: [
-                "type"=>"Error",
-                "code"=>400,
+                "type" => "Error",
+                "code" => 400,
                 "message" => "Chamber is exists",
-                "data"=>[
+                "data" => [
                     'id' => 23,
-                    "number"=>1
+                    "number" => 1
                 ]
             ]
         ),
@@ -363,40 +371,42 @@ final class ChamberController extends AbstractController
         response: 200,
         description: 'Create',
         content: new OA\JsonContent(
-            ref: new Model(type:ResponseDTO::class),
+            ref: new Model(type: ResponseDTO::class),
             type: "object",
             example: [
-                "type"=>"Create",
-                "code"=>200,
+                "type" => "Create",
+                "code" => 200,
                 "message" => "Chamber has been create",
-                "data"=>[
+                "data" => [
                     'id' => 24,
-                    "number"=>11
+                    "number" => 11
                 ]
             ]
         ),
     )]
-    #[OA\Tag(name:"Chamber")]
+    #[OA\Tag(name: "Chamber")]
     #[Route(name: 'store_chambers', methods: ["POST"])]
     public function store(Request $request): JsonResponse
     {
         $validatedRequestChamber = $this->validateService->chambersRequestData(
-            $this->responseHelper->checkRequest($request->getContent(),'App\Entity\Chambers')
+            $this->responseHelper->checkRequest($request->getContent(), 'App\Entity\Chambers')
         );
-        if(!$validatedRequestChamber){
+        if (!$validatedRequestChamber) {
             $response = $this->responseFabric->getResponse(
                 ResponseFabric::RESPONSE_TYPE_NOT_VALID);
-        return $this->json($response,$response['code']);
+
+            return $this->json($response, $response['code']);
         }
         $foundChamber = $this->chambersRepository->findBy([
-            'number' =>$validatedRequestChamber->getNumber()
+            'number' => $validatedRequestChamber->getNumber()
         ]);
-        if($foundChamber){
+        if ($foundChamber) {
             $response = $this->responseFabric->getResponse(
                 ResponseFabric::RESPONSE_TYPE_CONFLICT,
                 "",
                 $this->responseHelper->first($foundChamber));
-            return $this->json($response,$response['code']);
+
+            return $this->json($response, $response['code']);
         }
         $this->entityManager->persist($validatedRequestChamber);
         $this->entityManager->flush();
@@ -405,32 +415,33 @@ final class ChamberController extends AbstractController
             ResponseFabric::RESPONSE_TYPE_OK,
             'Chamber has been create',
             $validatedRequestChamber);
-        return $this->json($response,$response['code']);
+
+        return $this->json($response, $response['code']);
     }
 
     /**
      * @throws ApiResponseException
      */
     #[OA\RequestBody(
-      required: true,
+        required: true,
         content: new OA\JsonContent(
             properties: [
-                "number"=>new OA\Property(type:'integer',example: '2')
-        ],
+                "number" => new OA\Property(type: 'integer', example: '2')
+            ],
             type: "string", example: [
-                "number"=>333
-              ]
+            "number" => 333
+        ]
         )
     )]
     #[OA\Response(
         response: 404,
         description: 'Not Found',
         content: new OA\JsonContent(
-            ref: new Model(type:ResponseDTO::class),
+            ref: new Model(type: ResponseDTO::class),
             type: "object",
             example: [
-                "type"=>"Not found",
-                "code"=>404,
+                "type" => "Not found",
+                "code" => 404,
                 "message" => "Chamber not found",
             ]
         ),
@@ -439,41 +450,43 @@ final class ChamberController extends AbstractController
         response: 200,
         description: 'Updated',
         content: new OA\JsonContent(
-            ref: new Model(type:ResponseDTO::class),
+            ref: new Model(type: ResponseDTO::class),
             type: "object",
             example: [
-                "type"=>"Updated",
-                "code"=>200,
+                "type" => "Updated",
+                "code" => 200,
                 "message" => "Chamber has been updated",
-                "data"=>[
-                    "id"=>1,
+                "data" => [
+                    "id" => 1,
                     "number" => 333
                 ]
             ]
         ),
     )]
-    #[OA\Tag(name:"Chamber")]
+    #[OA\Tag(name: "Chamber")]
     #[Route('/{id}', name: 'update_chambers', methods: ["PATCH"])]
     public function update(Request $request, int|null $id): JsonResponse
     {
-        $requestChamber = $this->responseHelper->checkRequest($request->getContent(),'App\Entity\Chambers');
+        $requestChamber = $this->responseHelper->checkRequest($request->getContent(), 'App\Entity\Chambers');
         $foundChamber = $this->chambersRepository->find($id);
-        $validateRequestChamber = ( (!$requestChamber) or
-            (gettype($requestChamber->getNumber())!=="integer") or
+        $validateRequestChamber = ((!$requestChamber) or
+            (gettype($requestChamber->getNumber()) !== "integer") or
             $this->chambersRepository->findBy([
-                'number'=>$requestChamber->getNumber()
+                'number' => $requestChamber->getNumber()
             ])
         );
-        if(!$foundChamber){
+        if (!$foundChamber) {
             $response = $this->responseFabric->getResponse(
                 ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
                 'Chamber not found');
-            return $this->json($response,$response['code']);
+
+            return $this->json($response, $response['code']);
         }
-        if($validateRequestChamber){
+        if ($validateRequestChamber) {
             $response = $this->responseFabric->getResponse(
                 ResponseFabric::RESPONSE_TYPE_NOT_VALID);
-            return $this->json($response,$response['code']);
+
+            return $this->json($response, $response['code']);
         }
         $foundChamber->setNumber($requestChamber->getNumber());
         $this->entityManager->flush();
@@ -482,18 +495,19 @@ final class ChamberController extends AbstractController
             ResponseFabric::RESPONSE_TYPE_OK,
             'Chamber has been update',
             $foundChamber);
-        return $this->json($response,$response['code']);
+
+        return $this->json($response, $response['code']);
     }
 
     #[OA\Response(
         response: 202,
         description: 'Return all chambers',
         content: new OA\JsonContent(
-            ref: new Model(type:ResponseDTO::class),
+            ref: new Model(type: ResponseDTO::class),
             type: "object",
             example: [
-                "type"=>"Delete",
-                "code"=>202,
+                "type" => "Delete",
+                "code" => 202,
                 "message" => "Chamber has been delete",
             ]
         ),
@@ -502,30 +516,30 @@ final class ChamberController extends AbstractController
         response: 404,
         description: 'Not found',
         content: new OA\JsonContent(
-            ref: new Model(type:ResponseDTO::class),
+            ref: new Model(type: ResponseDTO::class),
             type: "object",
             example: [
-                "type"=>"Not Found",
-                "code"=>404,
+                "type" => "Not Found",
+                "code" => 404,
                 "message" => "Chamber - not found",
             ]
         ),
     )]
-    #[OA\Tag(name:"Chamber")]
-    #[Route('/{id}', name: 'delete_chambers', requirements: ['id'=>Requirement::DIGITS], methods: ["DELETE"])]
+    #[OA\Tag(name: "Chamber")]
+    #[Route('/{id}', name: 'delete_chambers', requirements: ['id' => Requirement::DIGITS], methods: ["DELETE"])]
     public function delete(int $id): JsonResponse
     {
-        $foundChamber= $this->chambersRepository->find($id);
-        if(!$foundChamber){
+        $foundChamber = $this->chambersRepository->find($id);
+        if (!$foundChamber) {
             $response = $this->responseFabric->getResponse(
                 ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
                 'Chamber - not found');
-            return $this->json($response,$response['code']);
+
+            return $this->json($response, $response['code']);
         }
         $chamberPatient = $foundChamber->getChambersPatients()->getValues();
-        if($chamberPatient){
-            foreach ($chamberPatient as $cp)
-            {
+        if ($chamberPatient) {
+            foreach ($chamberPatient as $cp) {
                 $this->entityManager->remove($cp);
             }
         }
@@ -533,8 +547,8 @@ final class ChamberController extends AbstractController
             'source_id' => $foundChamber->getId(),
             'source_type' => 'chambers'
         ]);
-        if($foundProcedureLists){
-            foreach ($foundProcedureLists as $procedureList){
+        if ($foundProcedureLists) {
+            foreach ($foundProcedureLists as $procedureList) {
                 $this->entityManager->remove($procedureList);
             }
         }
@@ -544,6 +558,7 @@ final class ChamberController extends AbstractController
         $response = $this->responseFabric->getResponse(
             ResponseFabric::RESPONSE_TYPE_OK,
             'Chamber - has been delete');
-        return $this->json($response,$response['code']);
+
+        return $this->json($response, $response['code']);
     }
 }
