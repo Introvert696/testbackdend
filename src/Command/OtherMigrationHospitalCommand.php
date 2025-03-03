@@ -124,13 +124,15 @@ class OtherMigrationHospitalCommand extends Command
         ]
     ];
     private SymfonyStyle $io;
+    private array $usedData;
+    private int $successCount = 0;
+    private int $failureCount = 0;
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
     )
     {
         parent::__construct();
-
     }
 
     protected function configure(): void
@@ -144,9 +146,9 @@ class OtherMigrationHospitalCommand extends Command
     {
         $this->io = new SymfonyStyle($input, $output);
         foreach ($this->structConvert as $key => $struct) {
-            $this->newAdapterFabric($key, $struct);
+            $this->migrateTable($key, $struct);
         }
-        $this->io->success('Migrate successfully ended');
+        $this->io->success('Migrate ended');
 
         return Command::SUCCESS;
     }
@@ -167,97 +169,114 @@ class OtherMigrationHospitalCommand extends Command
 
         return $result->fetchAll(PDO::FETCH_ASSOC);
     }
-
-    private function newAdapterFabric(string $entityType, array $structure): bool
+    private function fillArrayToSearch($structure): string
     {
-        return $this->migrateTable($entityType, $structure);
-    }
-
-    private function migrateTable($entityType, $structure): bool
-    {
-
         $columnsForSearch = [];
         foreach ($structure['fields'] as $values) {
             foreach ($values['source_fields'] as $sf) {
                 $columnsForSearch[] = $sf;
             }
         }
-        $columnsForSearch = implode(",", $columnsForSearch);
+
+        return implode(",", $columnsForSearch);
+    }
+    private function migrateTable($entityType, $structure): void
+    {
+        $columnsForSearch = $this->fillArrayToSearch($structure);
         $sourceItems = $this->getRowsFromTable($entityType, $columnsForSearch);
         if (count($sourceItems) == 0) {
-            return false;
+            return;
         }
+        $this->persistItems($sourceItems,$structure);
+        $this->entityManager->flush();
+        $this->responseInfo();
 
+        $this->io->success('Migrate successfully, table - ' . $entityType);
+    }
+    private function persistItems($sourceItems,$structure):void
+    {
         foreach ($sourceItems as $item) {
-            $usedData = [];
             $findObj = $this->getObjectFromRepository($item, $structure);
             if (count($findObj) > 0) {
+                $this->failureCount++;
                 continue;
             }
-            $newObj = new $structure['target'];
-            foreach ($structure['fields'] as $field => $property) {
-                $valueToSet = "";
-
-                if (class_exists($property['type'])) {
-                    $searchConfig = [];
-                    $sourceObjectId = $item[$property['source_fields'][0]];
-                    $findingObjFromSource = $this->makeQuery(
-                        "Select * from " . $property['source_table'] . ' where id=' . $sourceObjectId
-                    )[0];
-                    foreach ($property['fields_for_search'] as $key => $fieldsForSearch) {
-                        if (!$searchConfig[$fieldsForSearch]) {
-                            $searchConfig[$fieldsForSearch] = $findingObjFromSource[$key];
-                        } else {
-                            $searchConfig[$fieldsForSearch] .= ' ' . $findingObjFromSource[$key];
-                        }
-                    }
-                    $objRepository = $this->entityManager->getRepository($property['type']);
-                    $findByTarget = $objRepository->findBy($searchConfig);
-                    if (count($findByTarget) <= 0) {
-                        break;
-                    }
-                    $valueToSet = $findByTarget[0];
-
-
-                }
-                else if ($property['type']==="default"){
-                    $valueToSet = $property['default'];
-                }
-                else {
-                    foreach ($property['source_fields'] as $sourceField) {
-                        $valueToSet === "" ?
-                            $valueToSet = $item[$sourceField] :
-                            $valueToSet = $valueToSet . ' ' . $item[$sourceField];
-                    }
-                }
-                $setter = $property['setter'];
-                $newObj->$setter($valueToSet);
-                $usedData[$field] = $valueToSet;
-            }
-            $duplicateObject = $this->findByFromRepository($structure['target'],$usedData);
+            $newObj = $this->fillFieldsForCreate(new $structure['target'],$structure['fields'],$item);
+            $duplicateObject = $this->findByFromRepository($structure['target'],$this->usedData);
+            $this->usedData = [];
             if (count($duplicateObject) > 0) {
+                $this->failureCount++;
                 continue;
             }
             $this->entityManager->persist($newObj);
+            $this->successCount+=1;
         }
-
-        $this->entityManager->flush();
-
-        $this->io->success('Migrate successfully, table - ' . $entityType);
-        return false;
+    }
+    private function responseInfo():void
+    {
+        $this->io->title(
+            "Count: ".$this->successCount+$this->failureCount.
+            ". Success: ".$this->successCount.
+            ". Skip: ".$this->failureCount
+        );
+        $this->successCount = 0;
+        $this->failureCount = 0;
+    }
+    private function fillFieldsForCreate(mixed $newObject,array $fields,mixed $item): object
+    {
+        foreach ($fields as $field => $property) {
+            $valueToSet = "";
+            if (class_exists($property['type'])) {
+                $sourceObjectId = $item[$property['source_fields'][0]];
+                $sql = "Select * from " . $property['source_table'] . ' where id =' . $sourceObjectId;
+                $findingObjFromSource = $this->makeQuery($sql)[0];
+                $searchConfig = $this->createSearchConfig($findingObjFromSource,$property['fields_for_search']);
+                $objRepository = $this->entityManager->getRepository($property['type']);
+                $findByTarget = $objRepository->findBy($searchConfig);
+                if (count($findByTarget) <= 0) {
+                    break;
+                }
+                $valueToSet = $findByTarget[0];
+            }
+            else if ($property['type']==="default"){
+                $valueToSet = $property['default'];
+            }
+            else {
+                foreach ($property['source_fields'] as $sourceField) {
+                    $valueToSet === "" ?
+                        $valueToSet = $item[$sourceField] :
+                        $valueToSet = $valueToSet . ' ' . $item[$sourceField];
+                }
+            }
+            $setter = $property['setter'];
+            $newObject->$setter($valueToSet);
+            $this->usedData[$field] = $valueToSet;
+        }
+        return $newObject;
+    }
+    private function createSearchConfig($findingObjFromSource,$fieldsForSearch): array
+    {
+        $searchConfig = [];
+        foreach ($fieldsForSearch as $key => $fieldValue) {
+            if (!isset($searchConfig[$fieldValue])) {
+                $searchConfig[$fieldValue] = $findingObjFromSource[$key];
+            } else {
+                $searchConfig[$fieldValue] .= ' ' . $findingObjFromSource[$key];
+            }
+        }
+        return $searchConfig;
     }
 
     private function findByFromRepository(string $classname, array $params): array
     {
-        $objectRepository =$this->entityManager->getRepository($classname);
+        $objectRepository = $this->entityManager->getRepository($classname);
+
         return $objectRepository->findBy($params);
     }
     private function getObjectFromRepository(array $item,array $structure): array
     {
         $objRepository = $this->entityManager->getRepository($structure['target']);
         $findByConfig = [];
-
-        // заполнение полей для поиска из репозитория
         foreach ($structure['fields'] as $field => $property){
             if(class_exists($property['type'])){
                 $findObjectForSearch= $this->findObjectFromRepositoryWithClassTypeById(
@@ -265,7 +284,7 @@ class OtherMigrationHospitalCommand extends Command
                     $item[$property['source_fields'][0]]);
                 $findByConfig[$field] = $findObjectForSearch;
             }
-            else if((gettype($property['type'])==="string" )or (gettype($property['type'])==="integer")){
+            else if((gettype($property['type']) === "string" ) or (gettype($property['type']) === "integer")){
                 foreach($property['source_fields'] as $sf){
                     if(isset($findByConfig[$field])){
                         $findByConfig[$field] = $findByConfig[$field].' '.$item[$sf];
@@ -276,9 +295,9 @@ class OtherMigrationHospitalCommand extends Command
                 }
             }
         }
+
         return $objRepository->findBy($findByConfig);
     }
-
     /**
      * @param string $classname Classname for get a repository
      * @param int $id id for search
@@ -287,6 +306,7 @@ class OtherMigrationHospitalCommand extends Command
     private function findObjectFromRepositoryWithClassTypeById(string $classname,int $id):mixed
     {
         $repositoryForSearch = $this->entityManager->getRepository($classname);
+
         return $repositoryForSearch->findOneBy(
             ["id" => $id]
         );
