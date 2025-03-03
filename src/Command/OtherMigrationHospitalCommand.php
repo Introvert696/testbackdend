@@ -150,6 +150,7 @@ class OtherMigrationHospitalCommand extends Command
         $this->io = new SymfonyStyle($input, $output);
         foreach ($this->structConvert as $key => $struct) {
             $this->migrateTable($key, $struct);
+            $this->responseInfo();
         }
         $this->io->success('Migrate ended');
 
@@ -189,38 +190,57 @@ class OtherMigrationHospitalCommand extends Command
     {
         $columnsForSearch = $this->fillArrayToSearch($structure);
         $sourceItems = $this->getRowsFromTable($entityType, $columnsForSearch);
-
         if (count($sourceItems) == 0) {
             return;
         }
-
-        $this->persistItems($sourceItems, $structure);
-        $this->entityManager->flush();
-        $this->responseInfo();
-
-        $this->io->success('Migrate successfully, table - ' . $entityType);
+        $createdItems = $this->createNewItems($sourceItems, $structure);
+        $this->saveItems($createdItems);
+        $this->io->success('Successfully migrate table - ' . $entityType);
     }
 
-    private function persistItems($sourceItems, $structure): void
+    private function createNewItems($sourceItems, $structure): array
     {
+        $createdItems = [];
         foreach ($sourceItems as $item) {
-            $findObj = $this->getObjectFromRepository($item, $structure);
+            $newObj = $this->createNewTargetItem($item, $structure);
+            if (!$newObj) {
+                continue;
+            }
+            $createdItems[] = $newObj;
+        }
 
-            if (count($findObj) > 0) {
-                $this->failureCount++;
-                continue;
-            }
-            $newObj = $this->fillFieldsForCreate(new $structure['target'], $structure['fields'], $item);
-            $duplicateObject = $this->findByFromRepository($structure['target'], $this->usedData);
-            $this->usedData = [];
-            if (count($duplicateObject) > 0) {
-                $this->failureCount++;
-                continue;
-            }
-            $this->entityManager->persist($newObj);
+        return $createdItems;
+    }
+
+    private function saveItems($createdItems): void
+    {
+        foreach ($createdItems as $item) {
+            $this->entityManager->persist($item);
             $this->successCount += 1;
         }
+        $this->entityManager->flush();
     }
+
+    private function createNewTargetItem($item, $structure): object|bool
+    {
+        $findObj = $this->getObjectFromRepository($item, $structure);
+        if (count($findObj) > 0) {
+            $this->failureCount++;
+
+            return false;
+        }
+        $newObj = $this->fillFieldsForCreate($structure, $item);
+        $duplicateObject = $this->findByFromRepository($structure['target'], $this->usedData);
+        $this->usedData = [];
+        if (count($duplicateObject) > 0) {
+            $this->failureCount++;
+
+            return false;
+        }
+
+        return $newObj;
+    }
+
 
     private function responseInfo(): void
     {
@@ -229,22 +249,30 @@ class OtherMigrationHospitalCommand extends Command
             ". Success: " . $this->successCount .
             ". Skip: " . $this->failureCount
         );
+        // reset counts
         $this->successCount = 0;
         $this->failureCount = 0;
     }
 
-    private function fillFieldsForCreate(mixed $newObject, array $fields, mixed $item): object
+    private function findItemFromSourceById($item, $property): mixed
     {
+        $sourceObjectId = $item[$property['source_fields'][0]];
+        $sqlForSearch = "Select * from " . $property['source_table'] . ' where id =' . $sourceObjectId;
+
+        return $this->makeQuery($sqlForSearch)[0];
+    }
+
+    private function fillFieldsForCreate(array $structure, mixed $item): object
+    {
+        $newObject = new $structure['target'];
+        $fields = $structure['fields'];
         foreach ($fields as $field => $property) {
             $valueToSet = "";
             if (class_exists($property['type'])) {
-                $sourceObjectId = $item[$property['source_fields'][0]];
-                $sql = "Select * from " . $property['source_table'] . ' where id =' . $sourceObjectId;
-                $findingObjFromSource = $this->makeQuery($sql)[0];
+                $findingObjFromSource = $this->findItemFromSourceById($item, $property);
                 $searchConfig = $this->createSearchConfig($findingObjFromSource, $property['fields_for_search']);
                 $objRepository = $this->entityManager->getRepository($property['type']);
                 $findByTarget = $objRepository->findBy($searchConfig);
-
                 if (count($findByTarget) <= 0) {
                     break;
                 }
@@ -253,8 +281,8 @@ class OtherMigrationHospitalCommand extends Command
                 $valueToSet = $property['default'];
             } else if ($property['type'] === 'id') {
                 $sqlForSearch = "Select * from " . $property['source_table'] . ' where';
-                foreach ($property['source_fields'] as $psf) {
-                    $sqlForSearch .= ' id=' . $item[$psf];
+                foreach ($property['source_fields'] as $source_field) {
+                    $sqlForSearch .= ' id=' . $item[$source_field];
                 }
                 $searchResult = $this->makeQuery($sqlForSearch);
                 if (count($searchResult) <= 0) {
@@ -287,6 +315,7 @@ class OtherMigrationHospitalCommand extends Command
 
     private function createSearchConfig($findingObjFromSource, $fieldsForSearch): array
     {
+        $searchConfig = [];
         foreach ($fieldsForSearch as $key => $fieldValue) {
             if (!isset($searchConfig[$fieldValue])) {
                 $searchConfig[$fieldValue] = $findingObjFromSource[$key];
@@ -315,7 +344,8 @@ class OtherMigrationHospitalCommand extends Command
                     $property['type'],
                     $item[$property['source_fields'][0]]);
                 $findByConfig[$field] = $findObjectForSearch;
-            } else if ((gettype($property['type']) === "string") or (gettype($property['type']) === "integer")) {
+//  } else if ((gettype($property['type']) === "string") or (gettype($property['type']) === "integer")) {
+            } else {
                 foreach ($property['source_fields'] as $sf) {
                     if (isset($findByConfig[$field])) {
                         $findByConfig[$field] = $findByConfig[$field] . ' ' . $item[$sf];

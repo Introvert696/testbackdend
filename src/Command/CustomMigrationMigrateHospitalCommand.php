@@ -17,11 +17,6 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-/**
- * Внимание тут написан будет очень плохой код,
- * Для начала я хочу костыльно все реализовать что бы это
- * просто работало, после я буду этот код переделывать
- */
 #[AsCommand(
     name: 'app:migration:migrate:hospital',
     description: 'Migrate from hospital database to main ',
@@ -65,7 +60,6 @@ class CustomMigrationMigrateHospitalCommand extends Command
     )
     {
         parent::__construct();
-
     }
 
     protected function configure(): void
@@ -79,9 +73,8 @@ class CustomMigrationMigrateHospitalCommand extends Command
     {
         $this->io = new SymfonyStyle($input, $output);
 
-        // пробегаемся по массиву со структурой базы данных от куда будет брать данные
-        foreach ($this->structConvert as $key => $struct) {
-            $result = $this->adapterFabric($key, $struct);
+        foreach ($this->dbStruct as $tableName => $structure) {
+            $this->migrateTable($tableName, $structure);
         }
         $this->io->success('Migrate successfully ended');
 
@@ -89,14 +82,15 @@ class CustomMigrationMigrateHospitalCommand extends Command
     }
 
 
-    private function adapterFabric(string $entityType, array $structure): bool
+    private function migrateTable(string $entityType, array $structure): void
     {
         $functionName = "create" . ucfirst($entityType);
         if (method_exists($this, $functionName)) {
-            return $this->$functionName($entityType, $structure);
+            $this->$functionName($entityType, $structure);
         } else {
-            return false;
+            $this->io->error('Check configuration');
         }
+
     }
 
     private function getRowsFromTable(string $tableName, string $tableColumn): array
@@ -106,10 +100,16 @@ class CustomMigrationMigrateHospitalCommand extends Command
         return $this->makeQuery($query);
     }
 
-    private function createPatient(string $tableName, array $structure): bool
+    private function getSourceItems(string $tableName, $structure): array
     {
         $columns = implode(",", $structure);
-        $sourcePatients = $this->getRowsFromTable($tableName, $columns);
+
+        return $this->getRowsFromTable($tableName, $columns);
+    }
+
+    private function createPatient(string $tableName, array $structure): bool
+    {
+        $sourcePatients = $this->getSourceItems($tableName, $structure);
         if (count($sourcePatients) <= 0) {
             return false;
         }
@@ -138,8 +138,7 @@ class CustomMigrationMigrateHospitalCommand extends Command
 
     private function createWard(string $tableName, array $structure): bool
     {
-        $columns = implode(",", $structure);
-        $sourceWards = $this->getRowsFromTable($tableName, $columns);
+        $sourceWards = $this->getSourceItems($tableName, $structure);
         if (count($sourceWards) <= 0) {
             return false;
         }
@@ -167,8 +166,7 @@ class CustomMigrationMigrateHospitalCommand extends Command
 
     private function createHospitalization(string $tableName, array $structure): bool
     {
-        $columns = implode(",", $structure);
-        $hospitalizations = $this->getRowsFromTable($tableName, $columns);
+        $hospitalizations = $this->getSourceItems($tableName, $structure);
         if (count($hospitalizations) <= 0) {
             return false;
         }
@@ -188,33 +186,25 @@ class CustomMigrationMigrateHospitalCommand extends Command
                 "card_number" => $patient[0]['card_number'],
             ]);
             if (count($foundPatient) <= 0) {
-                //если пациент не найден, то не создаем запись
                 $this->io->text("Target patient not found - skip");
                 continue;
             }
-            // тут ищем сначала палату из сурса бд, что бы узнать какой у нее был номер
             $chambers = $this->makeQuery("Select ward_number from ward where id=" . $hz['ward_id']);
-            // если в Сурс бд нет такой палаты, то скипаем
             if (count($chambers) <= 0) {
                 $this->io->text("Source chambers not found - skip");
                 continue;
             }
-            // теперь ищем палату с таким же номером, но в таргет бд
             $foundChamber = $chamberRepository->findBy([
                 "number" => $chambers[0]['ward_number']
             ]);
-            // если ее нет, то скипаем
             if (count($foundChamber) <= 0) {
-                // если не найдена палата то тоже не создаем запись
                 $this->io->text("Chamber not found - skip");
                 continue;;
             }
-            // проверяем, есть ли такая запись в таргет бд
             $foundChamberPatients = $chambersPatientsRepository->findBy([
                 "chambers" => $foundChamber[0],
                 "patients" => $foundPatient[0]
             ]);
-            // если она есть то скипаем
             if (count($foundChamberPatients) > 0) {
                 $this->io->text("ChamberPatients - has exists");
                 continue;
@@ -234,8 +224,7 @@ class CustomMigrationMigrateHospitalCommand extends Command
 
     private function createProcedure(string $tableName, array $structure): bool
     {
-        $columns = implode(",", $structure);
-        $sourceProcedures = $this->getRowsFromTable($tableName, $columns);
+        $sourceProcedures = $this->getSourceItems($tableName, $structure);
         if (count($sourceProcedures) <= 0) {
             return false;
         }
@@ -265,13 +254,10 @@ class CustomMigrationMigrateHospitalCommand extends Command
     private function createWard_procedure(string $tableName, array $structure): bool
     {
         // работаем с ProcedureList
-        $columns = implode(",", $structure);
         $procedureListRepository = $this->entityManager->getRepository(ProcedureList::class);
         $chamberRepository = $this->entityManager->getRepository(Chambers::class);
         $procedureRepository = $this->entityManager->getRepository(Procedures::class);
-
-
-        $sourceWardProcedures = $this->getRowsFromTable($tableName, $columns);
+        $sourceWardProcedures = $this->getSourceItems($tableName, $structure);
         foreach ($sourceWardProcedures as $swp) {
             $sourceFoundProcedure = $this->makeQuery("Select * from procedure where id=" . $swp['procedure_id']);
             $sourceFoundWard = $this->makeQuery("Select ward_number from ward where id=" . $swp['ward_id']);
