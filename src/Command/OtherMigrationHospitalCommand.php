@@ -24,7 +24,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class OtherMigrationHospitalCommand extends Command
 {
     // конфигурация для миграции базы данных
-    private array $structConvert = [
+    private array $databaseStructure = [
         "patient" => [
             'target' => Patients::class,
             "fields" => [
@@ -148,7 +148,7 @@ class OtherMigrationHospitalCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->io = new SymfonyStyle($input, $output);
-        foreach ($this->structConvert as $key => $struct) {
+        foreach ($this->databaseStructure as $key => $struct) {
             $this->migrateTable($key, $struct);
             $this->responseInfo();
             $this->resetCounts();
@@ -199,41 +199,43 @@ class OtherMigrationHospitalCommand extends Command
         return $result->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    // item
     private function createNewItems($sourceItems, $structure): array
     {
         $createdItems = [];
         foreach ($sourceItems as $item) {
-            $newObj = $this->createNewTargetItem($item, $structure);
-            if (!$newObj) {
+            $newItem = $this->createNewTargetItem($item, $structure);
+            if (!$newItem) {
                 continue;
             }
-            $createdItems[] = $newObj;
+            $createdItems[] = $newItem;
         }
 
         return $createdItems;
     }
 
+    // item
     private function createNewTargetItem($item, $structure): object|bool
     {
-        $findObj = $this->getObjectFromRepository($item, $structure);
-        if (count($findObj) > 0) {
+        $findItems = $this->getItemsFromRepository($item, $structure);
+        if (count($findItems) > 0) {
             $this->failureCount++;
 
             return false;
         }
-        $newObj = $this->fillFieldsForCreate($structure, $item);
-        $duplicateObject = $this->findByFromRepository($structure['target'], $this->usedData);
+        $newItem = $this->fillFieldsForCreate($structure, $item);
+        $duplicateItems = $this->findByFromRepository($structure['target'], $this->usedData);
         $this->usedData = [];
-        if (count($duplicateObject) > 0) {
+        if (count($duplicateItems) > 0) {
             $this->failureCount++;
 
             return false;
         }
 
-        return $newObj;
+        return $newItem;
     }
 
-    private function getObjectFromRepository(array $item, array $structure): array
+    private function getItemsFromRepository(array $item, array $structure): array
     {
         $objRepository = $this->entityManager->getRepository($structure['target']);
         $findByConfig = [];
