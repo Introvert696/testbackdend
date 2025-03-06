@@ -23,7 +23,6 @@ class DataReader
     public function findItemFromTargetDatabaseByConfig($entity, $config): array
     {
         $repository = $this->entityManager->getRepository($entity);
-        // create find by one field and all
         foreach ($config as $key => $value) {
             $result = $repository->findBy([
                 $key => $value
@@ -53,5 +52,50 @@ class DataReader
         return $this->makeQuery($sql);
     }
 
+    public function getEntityByTypeIsClass($item, $fieldStructure): object|array
+    {
+        $sourceTable = $fieldStructure['source_table'];
+        $sourceSearchId = $item[$fieldStructure["source_fields"][0]];
+        $itemFromSource = $this->selectItemsFromSourceTableById($sourceTable, $sourceSearchId);
+        if (count($itemFromSource) == 0) {
+            ConfigMigrator::$failureCount++;
+
+            return [];
+        }
+        $valueToSearch = [];
+        foreach ($fieldStructure["fields_for_search"] as $key => $value) {
+            $valueToSearch[$value] = $itemFromSource[0][$key];
+        }
+        $findsItem = $this->findItemFromTargetDatabaseByConfig($fieldStructure['type'], $valueToSearch);
+        if (count($findsItem) === 0) {
+            ConfigMigrator::$failureCount++;
+
+            return [];
+        }
+
+        return $findsItem[0];
+    }
+
+    public function getIdByTypeIsId($item, $fieldStructure): ?int
+    {
+        $sourceSearchId = $item[$fieldStructure['source_fields'][0]];
+        $sourceTable = $fieldStructure['source_table'];
+        $foundItem = $this->selectItemsFromSourceTableById($sourceTable, $sourceSearchId);
+        if (count($foundItem) == 0) {
+            return null;
+        }
+        $foundItem = $foundItem[0];
+        $fieldForSearchInTargetDatabase = [];
+        foreach ($fieldStructure['fields_for_search'] as $key => $value) {
+            $fieldForSearchInTargetDatabase[$key] = $foundItem[$value];
+        }
+        $foundItem = $this->findItemFromTargetDatabaseByConfig($fieldStructure['relation_entity'], $fieldForSearchInTargetDatabase);
+        if (count($foundItem) === 0) {
+            return null;
+        }
+        $foundItem = $foundItem[0];
+
+        return $foundItem->getId();
+    }
 
 }
