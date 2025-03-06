@@ -96,7 +96,9 @@ class ConfigMigrator
                     'source_table' => 'ward',
                     'source_fields' => ['ward_id'],
                     'field_for_relations' => 'ward_number',
-                    'field_for_search' => 'number',
+                    'fields_for_search' => [
+                        'number' => "ward_number"
+                    ],
                     'relation_entity' => Chambers::class
                 ],
                 'source_type' => [

@@ -10,16 +10,6 @@ class DataProcessor
     {
     }
 
-    public function getColumnFromStructure($tableStructure): array
-    {
-        $columns = [];
-        foreach ($tableStructure as $column => $structure) {
-            $columns[] = $column;
-        }
-
-        return $columns;
-    }
-
     public function transformSourceItemsToEntity($sourceItems, $structure): array
     {
         $createdItems = [];
@@ -53,27 +43,46 @@ class DataProcessor
         $columnForSearch = [];
         foreach ($structure['fields'] as $field => $fieldStructure) {
             $fieldValue = '';
-            // if field type is entity class
-            // need found this item, first in source db
-            // next step in target db and get entity item
             if (class_exists($fieldStructure['type'])) {
-                // TODO - if type is a class
-
                 $sourceTable = $fieldStructure['source_table'];
                 $sourceSearchId = $item[$fieldStructure["source_fields"][0]];
                 $itemFromSource = $this->dataReader->selectItemsFromSourceTableById($sourceTable, $sourceSearchId);
                 if (count($itemFromSource) == 0) {
-                    // if in source db not found items
                     ConfigMigrator::$failureCount++;
 
                     return [];
                 }
-                dump($fieldStructure);
-                dd($itemFromSource);
-                // first get item from source db, because table have a id
-                // need search id in source db, and get item with all field,
-                // next get field for get value to search in target db,
-                // because id not equals in target and source databases
+                $valueToSearch = [];
+                foreach ($fieldStructure["fields_for_search"] as $key => $value) {
+                    $valueToSearch[$value] = $itemFromSource[0][$key];
+                }
+                $findsItem = $this->dataReader->findItemFromTargetDatabaseByConfig($fieldStructure['type'], $valueToSearch);
+                if (count($findsItem) === 0) {
+                    ConfigMigrator::$failureCount++;
+
+                    return [];
+                }
+                $fieldValue = $findsItem[0];
+            } else if ($fieldStructure['type'] === "id") {
+                $sourceSearchId = $item[$fieldStructure['source_fields'][0]];
+                $sourceTable = $fieldStructure['source_table'];
+                $foundItem = $this->dataReader->selectItemsFromSourceTableById($sourceTable, $sourceSearchId);
+                if (count($foundItem) == 0) {
+                    return [];
+                }
+                $foundItem = $foundItem[0];
+                $fieldForSearchInTargetDatabase = [];
+                foreach ($fieldStructure['fields_for_search'] as $key => $value) {
+                    $fieldForSearchInTargetDatabase[$key] = $foundItem[$value];
+                }
+                $foundItem = $this->dataReader->findItemFromTargetDatabaseByConfig($fieldStructure['relation_entity'], $fieldForSearchInTargetDatabase);
+                if (count($foundItem) === 0) {
+                    return [];
+                }
+                $foundItem = $foundItem[0];
+                $fieldValue = $foundItem->getId();
+            } else if ($fieldStructure['type'] === "default") {
+                $fieldValue = $fieldStructure['default'];
             } else {
                 foreach ($fieldStructure['source_fields'] as $source_field) {
                     if ($fieldValue !== "") {

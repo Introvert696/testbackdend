@@ -55,32 +55,25 @@ class MainMigrator extends Command
     public function migrateTable($databaseStructure): void
     {
         foreach ($databaseStructure as $tableName => $tableStructure) {
-            // find all item from source db
             $findingItemsFromSourceDatabase = $this->dataReader->findItemsFromSourceDatabase($tableName);
-            // if item count <= 0, be nothing
             if (count($findingItemsFromSourceDatabase) === 0) {
-                // if table is empty skip this table
 
                 continue;
             }
-            // else transform source item to target entity
-            // in transform check every item in target database on duplicate
             $transformedItems = $this->dataProcessor->transformSourceItemsToEntity(
                 $findingItemsFromSourceDatabase,
                 $tableStructure
             );
-
-            // save data in database
             $this->dataWriter->saveItems($transformedItems);
-            // after transform, save every transformed data in database
-            $this->responseInfo();
+            $this->responseInfo($tableName);
         }
     }
 
-    private function responseInfo(): void
+    private function responseInfo($tableName): void
     {
         $this->io->title(
-            "Count: " . ConfigMigrator::$successCount + ConfigMigrator::$failureCount .
+            "Table - " . $tableName .
+            ". Count: " . ConfigMigrator::$successCount + ConfigMigrator::$failureCount .
             ". Success: " . ConfigMigrator::$successCount .
             ". Skip: " . ConfigMigrator::$failureCount
         );
