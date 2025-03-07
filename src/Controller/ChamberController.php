@@ -187,6 +187,15 @@ final class ChamberController extends AbstractController
     {
         // сделать проверку на существование палаты по id
         $chamberProcedures = [];
+        $foundChamber = $this->chambersRepository->find($id);
+        if (count($foundChamber) === 0) {
+            $response = $this->responseFabric->getResponse(
+                ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
+                'Chamber - not found'
+            );
+
+            return $this->json($response, $response['code']);
+        }
         $foundProcedureLists = $this->procedureListRepository->findBy([
             'source_type' => 'chambers',
             'source_id' => $id
