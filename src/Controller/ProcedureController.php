@@ -134,16 +134,9 @@ final class ProcedureController extends AbstractController
     ): JsonResponse
     {
         $procedure = $this->proceduresRepository->find($id);
-        if (!$procedure) {
-            $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
-                'procedure - not found'
-            );
-
-            return $this->json($response, $response['code']);
-        }
         $procedureResponse = $adaptersService
             ->convertProcedureToProcedureResponseDTO($procedure);
+        // take out  in a new function
         $entities = $procedureListRepository->findBy([
             'source_id' => $procedure->getId(),
             'status' => 1
@@ -153,7 +146,7 @@ final class ProcedureController extends AbstractController
                 $adaptersService->convertProcedureListToProcedureListResponseDTO($et)
             );
         }
-
+        // end take out
         $response = $this->responseFabric->getResponse(
             ResponseFabric::RESPONSE_TYPE_OK,
             'Info about procedure',
@@ -236,27 +229,8 @@ final class ProcedureController extends AbstractController
         $validatedProcedure = $this->validateService->validateProcedures(
             $this->responseHelper->checkRequest($requestContent, 'App\Entity\Procedures')
         );
-        if (!$validatedProcedure) {
-            $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_VALID
-            );
-
-            return $this->json($response, $response['code']);
-        }
-        $issetProcedure = $this->proceduresRepository->findBy([
-            'title' => $validatedProcedure->getTitle()
-        ]);
-        if ($issetProcedure) {
-            $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_CONFLICT,
-                data: $this->responseHelper->getFirstElement($issetProcedure)
-            );
-
-            return $this->json($response, $response['code']);
-        }
         $this->em->persist($validatedProcedure);
         $this->em->flush();
-
         $response = $this->responseFabric->getResponse(
             ResponseFabric::RESPONSE_TYPE_OK,
             'Procedure has been create',
@@ -314,41 +288,19 @@ final class ProcedureController extends AbstractController
         ),
     )]
     #[OA\Tag(name: "Procedure")]
-    // выводиться исключение если данные уже есть
     #[Route('/{id}', name: 'update_procedure', methods: ['PATCH'])]
-    public function update(Request $request, $id): JsonResponse
+    public function update(Request $request, int $id): JsonResponse
     {
+        // TODO - intercept exception and return error json
         $content = $request->getContent();
         $procedure = $this->proceduresRepository->find($id);
-        if (!$procedure) {
-            $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
-                'Procedure not found'
-            );
-
-            return $this->json($response, $response['code']);
-        }
-        if (!$content) {
-            $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_VALID
-            );
-
-            return $this->json($response, $response['code']);
-        }
         $validatedProcedure = $this->validateService->validateProcedures(
             $this->responseHelper->checkRequest($content, 'App\Entity\Procedures')
         );
-        if (!$validatedProcedure) {
-            $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_VALID
-            );
-
-            return $this->json($response, $response['code']);
-        }
+        // TODO - create a function in Procedure service
         $procedure->setTitle($validatedProcedure->getTitle());
         $procedure->setDescription($validatedProcedure->getDescription());
         $this->em->flush();
-
         $response = $this->responseFabric->getResponse(
             ResponseFabric::RESPONSE_TYPE_OK,
             'Procedure has been updated',
@@ -389,17 +341,8 @@ final class ProcedureController extends AbstractController
     public function delete($id): JsonResponse
     {
         $procedure = $this->proceduresRepository->find($id);
-        if (!$procedure) {
-            $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
-                'Procedure not found'
-            );
-
-            return $this->json($response, $response['code']);
-        }
         $this->em->remove($procedure);
         $this->em->flush();
-
         $response = $this->responseFabric->getResponse(
             ResponseFabric::RESPONSE_TYPE_OK,
             'Procedure has been delete'

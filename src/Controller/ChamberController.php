@@ -109,15 +109,8 @@ final class ChamberController extends AbstractController
         $chamberResponse = new ChamberResponseDTO();
         $patients = [];
         $foundChamber = $this->chambersRepository->find($id);
-        if (!$foundChamber) {
-            $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
-                'Chamber - not found'
-            );
-
-            return $this->json($response, $response['code']);
-        }
         $chamberPatients = $foundChamber->getChambersPatients()->getValues();
+        // TODO - refactor this place
         if ($chamberPatients) {
             foreach ($chamberPatients as $cp) {
                 $patients[] = $cp->getPatients();
@@ -185,17 +178,10 @@ final class ChamberController extends AbstractController
     #[Route('/{id}/procedures', name: 'show_chambers_procedures', requirements: ['id' => Requirement::DIGITS], methods: ["GET"])]
     public function showProcedures(int $id): JsonResponse
     {
-        // сделать проверку на существование палаты по id
+        // TODO - need a refactor
         $chamberProcedures = [];
         $foundChamber = $this->chambersRepository->find($id);
-        if (count($foundChamber) === 0) {
-            $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
-                'Chamber - not found'
-            );
 
-            return $this->json($response, $response['code']);
-        }
         $foundProcedureLists = $this->procedureListRepository->findBy([
             'source_type' => 'chambers',
             'source_id' => $id
@@ -203,14 +189,6 @@ final class ChamberController extends AbstractController
         foreach ($foundProcedureLists as $pl) {
             $chamberProcedures[] = $this->adaptersService
                 ->convertProcedureListToChamberProcedureDto($pl);
-        }
-        if (!$chamberProcedures) {
-            $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
-                'Procedures - not found'
-            );
-
-            return $this->json($response, $response['code']);
         }
         $response = $this->responseFabric->getResponse(
             ResponseFabric::RESPONSE_TYPE_OK,
@@ -288,6 +266,7 @@ final class ChamberController extends AbstractController
     #[Route('/{id}/procedures', name: 'update_chambers_procedures', requirements: ['id' => Requirement::DIGITS], methods: ["POST"])]
     public function updateProcedures(Request $request, int $id): JsonResponse
     {
+        // TODO - very need refactor
         $chamberProcedures = [];
         $foundChamber = $this->chambersRepository->find($id);
 
@@ -299,21 +278,6 @@ final class ChamberController extends AbstractController
             'source_type' => 'chambers',
             'source_id' => $id
         ]);
-        if (!$foundChamber) {
-            $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
-                'Chamber - not found'
-            );
-
-            return $this->json($response, $response['code']);
-        }
-        if (!$checkedProcListDTOs) {
-            $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_VALID
-            );
-
-            return $this->json($response, $response['code']);
-        }
         if ($foundProcedureLists) {
             foreach ($foundProcedureLists as $pl) {
                 $this->entityManager->remove($pl);
@@ -413,25 +377,9 @@ final class ChamberController extends AbstractController
             $this->responseHelper->checkRequest($request->getContent(),
                 'App\Entity\Chambers')
         );
-        if (!$validatedRequestChamber) {
-            $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_VALID
-            );
-
-            return $this->json($response, $response['code']);
-        }
         $foundChamber = $this->chambersRepository->findBy([
             'number' => $validatedRequestChamber->getNumber()
         ]);
-        if ($foundChamber) {
-            $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_CONFLICT,
-                "",
-                $this->responseHelper->getFirstElement($foundChamber)
-            );
-
-            return $this->json($response, $response['code']);
-        }
         $this->entityManager->persist($validatedRequestChamber);
         $this->entityManager->flush();
 
@@ -494,6 +442,7 @@ final class ChamberController extends AbstractController
     {
         $requestChamber = $this->responseHelper->checkRequest($request->getContent(), 'App\Entity\Chambers');
         $foundChamber = $this->chambersRepository->find($id);
+
         $validateRequestChamber = (
             (!$requestChamber) or
             (gettype($requestChamber->getNumber()) !== "integer") or
@@ -501,24 +450,8 @@ final class ChamberController extends AbstractController
                 'number' => $requestChamber->getNumber()
             ])
         );
-        if (!$foundChamber) {
-            $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
-                'Chamber not found'
-            );
-
-            return $this->json($response, $response['code']);
-        }
-        if ($validateRequestChamber) {
-            $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_VALID
-            );
-
-            return $this->json($response, $response['code']);
-        }
         $foundChamber->setNumber($requestChamber->getNumber());
         $this->entityManager->flush();
-
         $response = $this->responseFabric->getResponse(
             ResponseFabric::RESPONSE_TYPE_OK,
             'Chamber has been update',
@@ -564,14 +497,7 @@ final class ChamberController extends AbstractController
     public function delete(int $id): JsonResponse
     {
         $foundChamber = $this->chambersRepository->find($id);
-        if (!$foundChamber) {
-            $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
-                'Chamber - not found'
-            );
 
-            return $this->json($response, $response['code']);
-        }
         $chamberPatient = $foundChamber->getChambersPatients()->getValues();
         if ($chamberPatient) {
             foreach ($chamberPatient as $cp) {

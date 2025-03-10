@@ -115,23 +115,15 @@ final class PatientController extends AbstractController
     public function show(int $id): JsonResponse
     {
         $foundPatient = $this->patientsRepository->find($id);
+
         $foundProcList = $this->procedureListRepository->findBy([
             'source_type' => 'patients',
             'source_id' => $id
         ]);
-        if (!$foundPatient) {
-            $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
-                'Patient - not found'
-            );
-
-            return $this->json($response, $response['code']);
-        }
         $patient = $this->adaptersService->convertPatientToPatientResponseDTO(
             $foundPatient,
             $foundProcList
         );
-
         $response = $this->responseFabric->getResponse(
             ResponseFabric::RESPONSE_TYPE_OK,
             'Info about patient',
@@ -213,23 +205,9 @@ final class PatientController extends AbstractController
             $requestData,
             'App\Entity\Patients'
         );
-        if (!$validRequest) {
-            $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_VALID
-            );
-
-            return $this->json($response, $response['code']);
-        }
         $patients = $this->patientsRepository->findBy([
             'card_number' => $validRequest->getCardNumber()
         ]);
-        if (!$validateService->validatePatients($validRequest) or $patients) {
-            $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_VALID
-            );
-
-            return $this->json($response, $response['code']);
-        }
         $this->em->persist($validRequest);
         $this->em->flush();
         $response = $this->responseFabric->getResponse(
@@ -323,36 +301,13 @@ final class PatientController extends AbstractController
         ChambersPatientsService $chambersPatientsService,
     ): JsonResponse
     {
+        // TODO - take out in a new function
         $data = $request->getContent();
         $updatedData = $this->responseHelper
             ->checkRequest($data, 'App\DTO\Patients\PatientDTO');
         $patient = $this->patientsRepository->find($id);
         $chamber = $updatedData->chamber != null ?
             $chambersRepository->find($updatedData->chamber) : null;
-        if (!$updatedData) {
-            $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_VALID,
-                'Chamber - not found'
-            );
-
-            return $this->json($response, $response['code']);
-        }
-        if (!$patient) {
-            $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
-                'Patient - not found'
-            );
-
-            return $this->json($response, $response['code']);
-        }
-        if (!$chamber) {
-            $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
-                'Chamber - not found'
-            );
-
-            return $this->json($response, $response['code']);
-        }
         $patient->setName($updatedData->name ?? $patient->getName());
         $chamberPatients = $patient->getChambersPatients();
         if ($chamberPatients) {
@@ -365,7 +320,6 @@ final class PatientController extends AbstractController
             $this->em->persist($chamberPatients);
         }
         $this->em->flush();
-
         $response = $this->responseFabric->getResponse(
             ResponseFabric::RESPONSE_TYPE_OK,
             'Patient has been updated',
@@ -406,18 +360,11 @@ final class PatientController extends AbstractController
     public function delete(int $id): JsonResponse
     {
         $patient = $this->patientsRepository->getMore($id);
+        // TODO - take out in a new function
         $procedureList = $this->procedureListRepository->findBy([
             'source_type' => 'patients',
             'source_id' => $id
         ]);
-        if (!$patient) {
-            $response = $this->responseFabric->getResponse(
-                ResponseFabric::RESPONSE_TYPE_NOT_FOUND,
-                'Patient not found'
-            );
-
-            return $this->json($response, $response['code']);
-        }
         foreach ($procedureList as $pl) {
             $this->em->remove($pl);
         }
